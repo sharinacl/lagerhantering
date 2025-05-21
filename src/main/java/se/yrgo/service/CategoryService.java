@@ -1,5 +1,5 @@
 package se.yrgo.service;
 
-public class CategoryService {
+public interface CategoryService {
 
 }
