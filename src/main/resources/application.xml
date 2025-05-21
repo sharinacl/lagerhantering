@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- Enable component scanning for the given packages -->
+    <context:component-scan base-package="se.yrgo.controller"/>
+    <context:component-scan base-package="se.yrgo.service"/>
+    <context:component-scan base-package="se.yrgo.dao"/>
+
+    <!-- Database Configuration -->
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/inventory_management?useSSL=false&amp;serverTimezone=UTC"/>
+        <property name="username" value="root"/>
+        <property name="password" value="password"/>
+    </bean>
+
+    <!-- Hibernate Session Factory -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="annotatedClasses">
+            <list>
+                <value>se.yrgo.entity.Category</value>
+                <value>se.yrgo.entity.Product</value>
+                <value>se.yrgo.entity.Supplier</value>
+                <value>se.yrgo.entity.InventoryTransaction</value>
+            </list>
+        </property>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- Hibernate Transaction Manager -->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- Enable Annotation-Driven Transaction Management -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- DAOs -->
+    <bean id="categoryDAO" class="se.yrgo.dao.CategoryHibernateDAO">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="productDAO" class="se.yrgo.dao.ProductHibernateDAO">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="supplierDAO" class="se.yrgo.dao.SupplierDAOImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="inventoryTransactionDAO" class="se.yrgo.dao.InventoryTransactionDAO">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- Services -->
+    <bean id="categoryService" class="se.yrgo.service.CategoryServiceImpl">
+        <property name="categoryDAO" ref="categoryDAO"/>
+    </bean>
+
+    <bean id="productService" class="se.yrgo.service.ProductServiceImpl">
+        <property name="productDAO" ref="productDAO"/>
+    </bean>
+
+    <bean id="supplierService" class="se.yrgo.service.SupplierServiceImpl">
+        <property name="supplierDAO" ref="supplierDAO"/>
+    </bean>
+
+    <bean id="inventoryTransactionService" class="se.yrgo.service.InventoryTransactionServiceImpl">
+        <property name="inventoryTransactionDAO" ref="inventoryTransactionDAO"/>
+    </bean>
+
+    <!-- Controller -->
+    <bean id="menuController" class="se.yrgo.controller.MenuController">
+        <property name="productService" ref="productService"/>
+        <property name="categoryService" ref="categoryService"/>
+        <property name="supplierService" ref="supplierService"/>
+        <property name="inventoryTransactionService" ref="inventoryTransactionService"/>
+    </bean>
+
+</beans>
