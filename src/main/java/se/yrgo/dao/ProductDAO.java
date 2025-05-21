@@ -1,5 +1,5 @@
 package se.yrgo.dao;
 
-public class ProductDAO {
+public interface ProductDAO {
 
 }

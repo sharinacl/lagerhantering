@@ -1,5 +1,5 @@
 package se.yrgo.dao;
 
-public class SupplierDAO {
+public interface SupplierDAO {
 
 }
