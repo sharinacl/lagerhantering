@@ -1,7 +1,7 @@
 package se.yrgo.entity;
 
+import jakarta.persistence.CascadeType;
 import org.hibernate.annotations.*;
-import org.hibernate.annotations.CascadeType;
 import jakarta.persistence.*;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -31,29 +31,28 @@ public class Product {
     private BigDecimal price;
 
     @Column(name = "quantity", nullable = false)
-    private Integer quantity = 0;
+    private Integer inventoryQuantity = 0;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")
     private Supplier supplier;
 
-    @OneToMany(mappedBy = "product")
-    @Cascade(CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InventoryTransaction> transactions = new ArrayList<>();
 
     // Default constructor required by JPA
     public Product() {
     }
 
-    public Product(String name, String description, BigDecimal price, Integer quantity) {
+    public Product(String name, String description, BigDecimal price, Integer inventoryQuantity) {
         this.name = name;
         this.description = description;
         this.price = price;
-        this.quantity = quantity;
+        this.inventoryQuantity = inventoryQuantity;
     }
 
     // Getters and setters
@@ -90,11 +89,11 @@ public class Product {
     }
 
     public Integer getQuantity() {
-        return quantity;
+        return inventoryQuantity;
     }
 
     public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
+        this.inventoryQuantity = quantity;
     }
 
     public Category getCategory() {
@@ -128,7 +127,7 @@ public class Product {
 
     @Override
     public String toString() {
-        return "Product [id=" + id + ", name=" + name + ", price=" + price + ", quantity=" + quantity + "]";
+        return "Product [id=" + id + ", name=" + name + ", price=" + price + ", quantity=" + inventoryQuantity + "]";
     }
 }
 
