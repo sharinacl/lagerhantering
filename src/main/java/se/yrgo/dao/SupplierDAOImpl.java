@@ -1,48 +1,48 @@
 package se.yrgo.dao;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import se.yrgo.entity.Supplier;
 
 import java.util.List;
 
 public class SupplierDAOImpl implements SupplierDAO {
-    private SessionFactory sessionFactory;
+    private EntityManagerFactory entityManagerFactory;
 
-    public void setSessionFactory(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
+    public void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
+        this.entityManagerFactory = entityManagerFactory;
     }
 
     @Override
     public void saveSupplier(Supplier supplier) {
-        Session session = sessionFactory.getCurrentSession();
-        session.save(supplier);
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.persist(supplier);
     }
 
     @Override
     public Supplier getSupplierById(Long id) {
-        Session session = sessionFactory.getCurrentSession();
-        return session.get(Supplier.class, id);
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        return entityManager.find(Supplier.class, id);
     }
 
     @Override
     public List<Supplier> getAllSuppliers() {
-        Session session = sessionFactory.getCurrentSession();
-        return session.createQuery("FROM Supplier", Supplier.class).getResultList();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
     }
 
     @Override
     public void updateSupplier(Supplier supplier) {
-        Session session = sessionFactory.getCurrentSession();
-        session.update(supplier);
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.merge(supplier);
     }
 
     @Override
     public void deleteSupplier(Long id) {
-        Session session = sessionFactory.getCurrentSession();
-        Supplier supplier = session.get(Supplier.class, id);
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        Supplier supplier = entityManager.find(Supplier.class, id);
         if (supplier != null) {
-            session.delete(supplier);
+            entityManager.remove(supplier);
         }
     }
 }
