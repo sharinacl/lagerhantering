@@ -10,7 +10,7 @@ import se.yrgo.entity.Supplier;
 
 import java.util.List;
 
-@Service
+@Service("productService")
 public class ProductServiceImpl implements ProductService {
 
     @Autowired

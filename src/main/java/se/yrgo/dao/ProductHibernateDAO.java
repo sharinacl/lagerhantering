@@ -2,12 +2,14 @@ package se.yrgo.dao;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.springframework.stereotype.Repository;
 import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
 
 import java.util.List;
 
+@Repository
 public class ProductHibernateDAO implements ProductDAO {
     private SessionFactory sessionFactory;
 

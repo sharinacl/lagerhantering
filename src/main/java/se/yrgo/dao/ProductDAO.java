@@ -3,6 +3,7 @@ import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
 import java.util.List;
+
 public interface ProductDAO {
     void saveProduct(Product product);
     Product getProductById(Long id);
