@@ -33,6 +33,9 @@ public class Product {
     @Column(name = "quantity", nullable = false)
     private Integer inventoryQuantity = 0;
 
+    @Column(name = "order_point")
+    private Integer orderPoint;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
@@ -48,11 +51,12 @@ public class Product {
     public Product() {
     }
 
-    public Product(String name, String description, BigDecimal price, Integer inventoryQuantity) {
+    public Product(String name, String description, BigDecimal price, Integer inventoryQuantity, Integer orderPoint) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.inventoryQuantity = inventoryQuantity;
+        this.orderPoint = orderPoint;
     }
 
     // Getters and setters
@@ -96,6 +100,14 @@ public class Product {
         this.inventoryQuantity = quantity;
     }
 
+    public Integer getOrderPoint() {
+        return orderPoint;
+    }
+
+    public void setOrderPoint(Integer orderPoint) {
+        this.orderPoint = orderPoint;
+    }
+
     public Category getCategory() {
         return category;
     }
@@ -127,7 +139,7 @@ public class Product {
 
     @Override
     public String toString() {
-        return "Product [id=" + id + ", name=" + name + ", price=" + price + ", quantity=" + inventoryQuantity + "]";
+        return "Product [id=" + id + ", name=" + name + ", price=" + price + ", quantity=" + inventoryQuantity +  ", orderPoint=" + orderPoint + "]";
     }
 }
 

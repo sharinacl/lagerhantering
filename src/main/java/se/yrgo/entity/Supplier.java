@@ -1,6 +1,8 @@
 package se.yrgo.entity;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Table(name = "suppliers")
@@ -90,5 +92,19 @@ public class Supplier {
 
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+
+    //helper methods.
+    public void addProduct(Product product) {
+        if (products == null) {
+            products = new ArrayList<>();
+        }
+        products.add(product);
+        product.setSupplier(this);
+    }
+
+    public void removeProduct(Product product) {
+        products.remove(product);
+        product.setSupplier(null);
     }
 }
