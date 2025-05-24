@@ -1,8 +1,11 @@
 package se.yrgo.entity;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+@Entity
 @Table(name = "suppliers")
 public class Supplier {
 
@@ -20,8 +23,8 @@ public class Supplier {
 
     private String address;
 
-    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Product> products;
+    @ManyToMany(mappedBy = "suppliers")
+    private Set<Product> products = new HashSet<>();
 
     // Constructors
     public Supplier() {}
@@ -32,6 +35,15 @@ public class Supplier {
         this.email = email;
         this.phone = phone;
         this.address = address;
+    }
+
+    public Supplier(String name, String contactName) {
+        this.name = name;
+        this.contactName = contactName;
+    }
+
+    public Supplier(String name) {
+        this.name = name;
     }
 
     // Getters and Setters
@@ -84,11 +96,23 @@ public class Supplier {
         this.address = address;
     }
 
-    public List<Product> getProducts() {
+    public Set<Product> getProducts() {
         return products;
     }
 
-    public void setProducts(List<Product> products) {
+    public void setProducts(Set<Product> products) {
         this.products = products;
+    }
+
+    @Override
+    public String toString() {
+        return "Supplier{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", contactName='" + contactName + '\'' +
+                ", email='" + email + '\'' +
+                ", phone='" + phone + '\'' +
+                ", address='" + address + '\'' +
+                '}';
     }
 }

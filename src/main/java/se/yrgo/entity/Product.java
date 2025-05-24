@@ -1,20 +1,14 @@
 package se.yrgo.entity;
 
-import jakarta.persistence.CascadeType;
-import org.hibernate.annotations.*;
-import jakarta.persistence.*;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import se.yrgo.entity.Category;
-import se.yrgo.entity.Supplier;
-import se.yrgo.entity.InventoryTransaction;
-
+import javax.persistence.*;
+import javax.persistence.CascadeType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
-@Table(name = "products")
 public class Product {
 
     @Id
@@ -28,18 +22,30 @@ public class Product {
     private String description;
 
     @Column(name = "price", precision = 10, scale = 2)
-    private BigDecimal price;
+    private double price;
 
     @Column(name = "quantity", nullable = false)
     private Integer inventoryQuantity = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    private int reorderLevel;
+
+
+    @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplier_id")
-    private Supplier supplier;
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    @ManyToMany
+    @JoinTable(
+            name = "product_supplier",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "supplier_id")
+    )
+    private Set<Supplier> suppliers = new HashSet<>();
+
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InventoryTransaction> transactions = new ArrayList<>();
@@ -48,11 +54,21 @@ public class Product {
     public Product() {
     }
 
-    public Product(String name, String description, BigDecimal price, Integer inventoryQuantity) {
+    public Product(String name, String description, double price, Integer inventoryQuantity) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.inventoryQuantity = inventoryQuantity;
+    }
+
+    public Product(String name, int quantity, double price, Category category) {
+        this.name = name;
+        this.price = price;
+        this.category = category;
+    }
+
+    public Product(String name) {
+        this.name = name;
     }
 
     // Getters and setters
@@ -72,6 +88,26 @@ public class Product {
         this.name = name;
     }
 
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public int getReorderLevel() {
+        return reorderLevel;
+    }
+
+    public void setReorderLevel(int reorderLevel) {
+        this.reorderLevel = reorderLevel;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -80,13 +116,6 @@ public class Product {
         this.description = description;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
 
     public Integer getQuantity() {
         return inventoryQuantity;
@@ -96,20 +125,23 @@ public class Product {
         this.inventoryQuantity = quantity;
     }
 
-    public Category getCategory() {
-        return category;
+
+    public void addCategory(Category category) {
+        this.category.add(category);
+        category.getProducts().add(this);
     }
 
-    public void setCategory(Category category) {
-        this.category = category;
+    public Set<Category> getCategories() {
+        Set<Category> categories = Set.of();
+        return categories;
     }
 
-    public Supplier getSupplier() {
-        return supplier;
+    public Set<Supplier> getSuppliers() {
+        return suppliers;
     }
 
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
+    public void setSuppliers(Set<Supplier> suppliers) {
+        this.suppliers = suppliers;
     }
 
     public List<InventoryTransaction> getTransactions() {

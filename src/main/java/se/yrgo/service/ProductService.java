@@ -1,5 +1,6 @@
 package se.yrgo.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
@@ -14,5 +15,18 @@ public interface ProductService {
     List<Product> getProductsBySupplier(Supplier supplier);
     void updateProduct(Product product);
     void deleteProduct(Long id);
+    void deleteAllProducts();
     void updateInventory(Long productId, Integer quantity);
+
+    void restockProduct(String name, int qty);
+
+    Product getProductByName(String name);
+    List<Product> getLowStockProducts();
+
+
+    void sellProduct(String name, int qty);
+
+    @Transactional
+    Product findByIdWithTransactions(Long id);
+
 }

@@ -58,7 +58,60 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public void deleteAllProducts() {
+        productDAO.deleteAllProducts();
+    }
+
+    @Override
     public void updateInventory(Long productId, Integer quantity) {
+        if (quantity==0) {
+            throw new IllegalArgumentException("Quantity change cannot be zero");
+        }
         productDAO.updateInventory(productId, quantity);
+    }
+
+    @Override
+    @Transactional
+    public void restockProduct(String name, int quantity) {
+        Product p = productDAO.getProductByName(name);  // Make sure this method exists in DAO
+        if (p == null) {
+            throw new IllegalArgumentException("Product not found: " + name);
+        }
+
+        p.setQuantity(p.getQuantity() + quantity);
+        productDAO.updateProduct(p);  // Persist the changes
+    }
+
+    @Override
+    public Product getProductByName(String name) {
+        return productDAO.getProductByName(name);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Product> getLowStockProducts() {
+        return productDAO.getLowStockProducts();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void sellProduct(String name, int qty) {
+        Product product = productDAO.getProductByName(name);
+        if (product == null) {
+            throw new IllegalArgumentException("❌ Product not found: " + name);
+        }
+
+        if (product.getQuantity() < qty) {
+            throw new IllegalArgumentException("❌ Not enough stock for: " + name);
+        }
+
+        product.setQuantity(product.getQuantity() - qty);
+        productDAO.updateProduct(product);
+    }
+
+    @Override
+    @Transactional
+    public Product findByIdWithTransactions(Long id) {
+        return productDAO.findByIdWithTransactions(id);
     }
 }

@@ -2,21 +2,22 @@ package se.yrgo.dao;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 import se.yrgo.entity.Supplier;
 
 import java.util.List;
 
+@Repository
 public class SupplierDAOImpl implements SupplierDAO {
-    private SessionFactory sessionFactory;
 
-    public void setSessionFactory(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
+    @Autowired
+    private SessionFactory sessionFactory;
 
     @Override
     public void saveSupplier(Supplier supplier) {
         Session session = sessionFactory.getCurrentSession();
-        session.save(supplier);
+        session.saveOrUpdate(supplier);
     }
 
     @Override
