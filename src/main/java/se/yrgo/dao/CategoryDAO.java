@@ -1,5 +1,12 @@
 package se.yrgo.dao;
 
-public interface CategoryDAO {
+import se.yrgo.entity.Category;
 
+import java.util.List;
+
+public interface CategoryDAO {
+    void save(Category category);
+    List<Category> findAll();
+    Category findById(Long id);
+    void delete(Long id);
 }
