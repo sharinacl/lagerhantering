@@ -60,16 +60,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(Long id) {
         productDAO.deleteProduct(id);
     }
 
     @Override
+    @Transactional
     public void deleteAllProducts() {
         productDAO.deleteAllProducts();
     }
 
     @Override
+    @Transactional
     public void updateInventory(Long productId, Integer quantity) {
         if (quantity==0) {
             throw new IllegalArgumentException("Quantity change cannot be zero");
@@ -90,6 +93,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public Product getProductByName(String name) {
         return productDAO.getProductByName(name);
     }
@@ -116,9 +120,9 @@ public class ProductServiceImpl implements ProductService {
         productDAO.updateProduct(product);
     }
 
-    @Override
-    @Transactional
-    public Product findByIdWithTransactions(Long id) {
-        return productDAO.findByIdWithTransactions(id);
-    }
+//    @Override
+//    @Transactional
+//    public Product findByIdWithTransactions(Long id) {
+//        return productDAO.findByIdWithTransactions(id);
+//    }
 }

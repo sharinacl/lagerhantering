@@ -29,7 +29,7 @@ public interface ProductService {
 
     void sellProduct(String name, int qty);
 
-    @Transactional
-    Product findByIdWithTransactions(Long id);
+//    @Transactional
+//    Product findByIdWithTransactions(Long id);
 
 }
