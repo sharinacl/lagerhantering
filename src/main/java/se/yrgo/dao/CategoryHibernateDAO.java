@@ -37,7 +37,10 @@ public class CategoryHibernateDAO implements CategoryDAO {
     @Override
     public Category findById(Long id) {
         Session session = sessionFactory.getCurrentSession();
-        return session.get(Category.class, id);
+        return session.createQuery(
+                        "SELECT DISTINCT c FROM Category c LEFT JOIN FETCH c.products WHERE c.id = :id", Category.class)
+                .setParameter("id", id)
+                .uniqueResult();
     }
 
     @Override

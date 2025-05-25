@@ -10,6 +10,8 @@ public interface ProductDAO {
 
     Product findByIdWithTransactions(Long id);
 
+    Product findByIdWithTransactionsAndSuppliers(Long id);
+
     List<Product> getAllProducts();
     List<Product> getProductsByCategory(Category category);
     List<Product> getProductsBySupplier(Supplier supplier);

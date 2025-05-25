@@ -22,8 +22,8 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public List<Supplier> getAllSuppliers() {
-//        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
-        return findAllSuppliers();
+        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
+//        return findAllSuppliers();
     }
 
     @Override
@@ -31,10 +31,10 @@ public class SupplierServiceImpl implements SupplierService {
         return entityManager.find(Supplier.class, id);
     }
 
-    @Override
-    public List<Supplier> findAllSuppliers() {
-        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
-    }
+//    @Override
+//    public List<Supplier> getAllSuppliers() {
+//        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
+//    }
 
     @Override
     public void deleteSupplierById(int id) {
@@ -46,12 +46,12 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public void updateSupplier(Supplier supplier) {
-
+        entityManager.merge(supplier);
     }
 
     @Override
     public void deleteAllSuppliers() {
-
+        entityManager.createQuery("DELETE FROM Supplier").executeUpdate();
     }
 
 }

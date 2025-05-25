@@ -12,7 +12,7 @@ public interface SupplierService {
 
     Supplier getSupplierById(int id);
 
-    List<Supplier> findAllSuppliers();
+//    List<Supplier> findAllSuppliers();
 
     void deleteSupplierById(int id);
 

@@ -47,6 +47,19 @@ public class ProductHibernateDAO implements ProductDAO {
     }
 
     @Override
+    public Product findByIdWithTransactionsAndSuppliers(Long id) {
+        Session session = sessionFactory.getCurrentSession();
+        return session.createQuery(
+                        "SELECT DISTINCT p FROM Product p " +
+                                "LEFT JOIN FETCH p.suppliers " +
+                                "LEFT JOIN FETCH p.transactions " +
+                                "WHERE p.id = :id", Product.class)
+                .setParameter("id", id)
+                .uniqueResult();
+    }
+
+
+    @Override
     public List<Product> getAllProducts() {
         Session session = sessionFactory.getCurrentSession();
         return session.createQuery("FROM Product", Product.class).getResultList();

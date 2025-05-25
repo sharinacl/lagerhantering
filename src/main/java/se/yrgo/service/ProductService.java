@@ -10,6 +10,9 @@ import java.util.List;
 public interface ProductService {
     void saveProduct(Product product);
     Product getProductById(Long id);
+
+    Product findByIdWithTransactionsAndSuppliers(Long id);
+
     List<Product> getAllProducts();
     List<Product> getProductsByCategory(Category category);
     List<Product> getProductsBySupplier(Supplier supplier);

@@ -136,7 +136,7 @@ public class MainApp {
 
     private static void findProductById() {
         long id = getLongInput("Enter product ID: ");
-        Product product = productService.findByIdWithTransactions(id);
+        Product product = productService.findByIdWithTransactionsAndSuppliers(id);
         if (product != null) {
             displayProductDetails(product);
         } else {
@@ -180,7 +180,7 @@ public class MainApp {
 
     private static void updateProduct() {
         long id = getLongInput("Enter ID of product to update: ");
-        Product product = productService.findByIdWithTransactions(id);
+        Product product = productService.findByIdWithTransactionsAndSuppliers(id);
 
         if (product == null) {
             System.out.println("Product not found.");
@@ -218,7 +218,7 @@ public class MainApp {
 
     private static void deleteProduct() {
         long id = getLongInput("Enter ID of product to delete: ");
-        Product product = productService.findByIdWithTransactions(id);
+        Product product = productService.findByIdWithTransactionsAndSuppliers(id);
 
         if (product == null) {
             System.out.println("Product not found.");
@@ -573,7 +573,7 @@ public class MainApp {
     private static void recordSale() {
         System.out.println("\n=== RECORD SALE ===");
         long productId = getLongInput("Product ID: ");
-        Product product = productService.findByIdWithTransactions(productId);
+        Product product = productService.getProductById(productId);
 
         if (product == null) {
             System.out.println("Product not found.");
@@ -601,7 +601,7 @@ public class MainApp {
     private static void recordRestock() {
         System.out.println("\n=== RECORD RESTOCK ===");
         long productId = getLongInput("Product ID: ");
-        Product product = productService.findByIdWithTransactions(productId);
+        Product product = productService.getProductById(productId);
 
         if (product == null) {
             System.out.println("Product not found.");
@@ -623,7 +623,7 @@ public class MainApp {
 
     private static void viewTransactionsForProduct() {
         long productId = getLongInput("Enter product ID: ");
-        Product product = productService.findByIdWithTransactions(productId);
+        Product product = productService.getProductById(productId);
 
         if (product == null) {
             System.out.println("Product not found.");

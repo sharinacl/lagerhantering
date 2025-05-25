@@ -29,6 +29,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Product findByIdWithTransactionsAndSuppliers(Long id) {
+        return productDAO.findByIdWithTransactionsAndSuppliers(id);
+    }
+
+
+    @Override
     @Transactional (readOnly = true)
     public List<Product> getAllProducts() {
         return productDAO.getAllProducts();

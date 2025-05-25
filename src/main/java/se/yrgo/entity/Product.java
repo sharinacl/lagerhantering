@@ -47,7 +47,7 @@ public class Product {
     private Set<Supplier> suppliers = new HashSet<>();
 
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", fetch = FetchType.EAGER)
     private List<InventoryTransaction> transactions = new ArrayList<>();
 
     // Default constructor required by JPA
