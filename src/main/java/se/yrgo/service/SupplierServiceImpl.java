@@ -27,8 +27,13 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public Supplier getSupplierById(int id) {
-        return entityManager.find(Supplier.class, id);
+    public Supplier getSupplierById(Long id) {
+        List<Supplier> result = entityManager.createQuery(
+                        "SELECT DISTINCT s FROM Supplier s LEFT JOIN FETCH s.products WHERE s.id = :id", Supplier.class)
+                .setParameter("id", id)
+                .getResultList();
+
+        return result.isEmpty() ? null : result.get(0);
     }
 
 //    @Override
@@ -37,7 +42,7 @@ public class SupplierServiceImpl implements SupplierService {
 //    }
 
     @Override
-    public void deleteSupplierById(int id) {
+    public void deleteSupplierById(Long id) {
         Supplier supplier = entityManager.find(Supplier.class, id);
         if (supplier != null) {
             entityManager.remove(supplier);

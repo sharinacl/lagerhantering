@@ -429,7 +429,7 @@ public class MainApp {
     }
 
     private static void getSupplierById() {
-        int id = getIntInput("Enter supplier ID: ");
+        Long id = (long) getIntInput("Enter supplier ID: ");
         Supplier supplier = supplierService.getSupplierById(id);
         if (supplier != null) {
             displaySupplierDetails(supplier);
@@ -452,7 +452,7 @@ public class MainApp {
     }
 
     private static void updateSupplier() {
-        int id = getIntInput("Enter ID of supplier to update: ");
+        Long id = (long) getIntInput("Enter ID of supplier to update: ");
         Supplier supplier = supplierService.getSupplierById(id);
 
         if (supplier == null) {
@@ -495,7 +495,7 @@ public class MainApp {
     }
 
     private static void deleteSupplier() {
-        int id = getIntInput("Enter ID of supplier to delete: ");
+        Long id = (long) getIntInput("Enter ID of supplier to delete: ");
         Supplier supplier = supplierService.getSupplierById(id);
 
         if (supplier == null) {

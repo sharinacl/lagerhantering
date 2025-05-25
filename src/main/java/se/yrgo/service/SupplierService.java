@@ -10,11 +10,11 @@ public interface SupplierService {
 
     List<Supplier> getAllSuppliers();
 
-    Supplier getSupplierById(int id);
+    Supplier getSupplierById(Long id);
 
 //    List<Supplier> findAllSuppliers();
 
-    void deleteSupplierById(int id);
+    void deleteSupplierById(Long id);
 
     void updateSupplier(Supplier supplier);
 

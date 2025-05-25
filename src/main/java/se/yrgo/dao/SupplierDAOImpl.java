@@ -23,7 +23,10 @@ public class SupplierDAOImpl implements SupplierDAO {
     @Override
     public Supplier getSupplierById(Long id) {
         Session session = sessionFactory.getCurrentSession();
-        return session.get(Supplier.class, id);
+        return session.createQuery(
+                        "SELECT DISTINCT s FROM Supplier s LEFT JOIN FETCH s.products WHERE s.id = :id", Supplier.class)
+                .setParameter("id", id)
+                .uniqueResult();
     }
 
     @Override
