@@ -1,8 +1,18 @@
 package se.yrgo.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+
+import java.util.ArrayList;
 import java.util.List;
 
+@Entity
 @Table(name = "suppliers")
 public class Supplier {
 
@@ -10,21 +20,27 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column(name = "contact_name", length = 100)
     private String contactName;
 
+    @Column(name = "email", length = 100)
     private String email;
 
+    @Column(name = "phone", length = 20)
     private String phone;
 
+    @Column(name = "address", length = 255)
     private String address;
 
     @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Product> products;
+    private List<Product> products = new ArrayList<>();
 
-    // Constructors
-    public Supplier() {}
+    // Default constructor required by JPA
+    public Supplier() {
+    }
 
     public Supplier(String name, String contactName, String email, String phone, String address) {
         this.name = name;
@@ -34,8 +50,7 @@ public class Supplier {
         this.address = address;
     }
 
-    // Getters and Setters
-
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -90,5 +105,20 @@ public class Supplier {
 
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+
+    public void addProduct(Product product) {
+        products.add(product);
+        product.setSupplier(this);
+    }
+
+    public void removeProduct(Product product) {
+        products.remove(product);
+        product.setSupplier(null);
+    }
+
+    @Override
+    public String toString() {
+        return "Supplier [id=" + id + ", name=" + name + ", contactName=" + contactName + "]";
     }
 }
