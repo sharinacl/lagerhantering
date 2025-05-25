@@ -1,16 +1,9 @@
 package se.yrgo.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
-import java.util.ArrayList;
+import javax.persistence.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "suppliers")
@@ -20,27 +13,21 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "contact_name", length = 100)
     private String contactName;
 
-    @Column(name = "email", length = 100)
     private String email;
 
-    @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(name = "address", length = 255)
     private String address;
 
-    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Product> products = new ArrayList<>();
+    @ManyToMany(mappedBy = "suppliers")
+    private Set<Product> products = new HashSet<>();
 
-    // Default constructor required by JPA
-    public Supplier() {
-    }
+    // Constructors
+    public Supplier() {}
 
     public Supplier(String name, String contactName, String email, String phone, String address) {
         this.name = name;
@@ -50,7 +37,17 @@ public class Supplier {
         this.address = address;
     }
 
-    // Getters and setters
+    public Supplier(String name, String contactName) {
+        this.name = name;
+        this.contactName = contactName;
+    }
+
+    public Supplier(String name) {
+        this.name = name;
+    }
+
+    // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -99,26 +96,23 @@ public class Supplier {
         this.address = address;
     }
 
-    public List<Product> getProducts() {
+    public Set<Product> getProducts() {
         return products;
     }
 
-    public void setProducts(List<Product> products) {
+    public void setProducts(Set<Product> products) {
         this.products = products;
-    }
-
-    public void addProduct(Product product) {
-        products.add(product);
-        product.setSupplier(this);
-    }
-
-    public void removeProduct(Product product) {
-        products.remove(product);
-        product.setSupplier(null);
     }
 
     @Override
     public String toString() {
-        return "Supplier [id=" + id + ", name=" + name + ", contactName=" + contactName + "]";
+        return "Supplier{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", contactName='" + contactName + '\'' +
+                ", email='" + email + '\'' +
+                ", phone='" + phone + '\'' +
+                ", address='" + address + '\'' +
+                '}';
     }
 }

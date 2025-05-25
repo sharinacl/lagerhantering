@@ -1,45 +1,57 @@
 package se.yrgo.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import se.yrgo.dao.SupplierDAO;
 import se.yrgo.entity.Supplier;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 
-@Service("supplierService")
+@Service
+@Transactional
 public class SupplierServiceImpl implements SupplierService {
 
-    @Autowired
-    private SupplierDAO supplierDAO;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
-    @Transactional
     public void saveSupplier(Supplier supplier) {
-        supplierDAO.saveSupplier(supplier);
+        entityManager.persist(supplier);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Supplier getSupplierById(Long id) {
-        return supplierDAO.getSupplierById(id);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<Supplier> getAllSuppliers() {
-        return supplierDAO.getAllSuppliers();
+        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
+//        return findAllSuppliers();
     }
 
     @Override
-    @Transactional
+    public Supplier getSupplierById(int id) {
+        return entityManager.find(Supplier.class, id);
+    }
+
+//    @Override
+//    public List<Supplier> getAllSuppliers() {
+//        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
+//    }
+
+    @Override
+    public void deleteSupplierById(int id) {
+        Supplier supplier = entityManager.find(Supplier.class, id);
+        if (supplier != null) {
+            entityManager.remove(supplier);
+        }
+    }
+
+    @Override
     public void updateSupplier(Supplier supplier) {
-        supplierDAO.updateSupplier(supplier);
+        entityManager.merge(supplier);
     }
 
     @Override
-    public void deleteSupplier(Long id) {
-        supplierDAO.deleteSupplier(id);
+    public void deleteAllSuppliers() {
+        entityManager.createQuery("DELETE FROM Supplier").executeUpdate();
     }
+
 }
