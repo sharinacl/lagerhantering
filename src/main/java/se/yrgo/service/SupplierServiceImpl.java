@@ -8,7 +8,7 @@ import se.yrgo.entity.Supplier;
 
 import java.util.List;
 
-@Service
+@Service("supplierService")
 public class SupplierServiceImpl implements SupplierService {
 
     @Autowired
@@ -16,20 +16,20 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     @Transactional
-    public List<Supplier> getAllSuppliers() {
-        return supplierDAO.getAllSuppliers();
+    public void saveSupplier(Supplier supplier) {
+        supplierDAO.saveSupplier(supplier);
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public Supplier getSupplierById(Long id) {
         return supplierDAO.getSupplierById(id);
     }
 
     @Override
-    @Transactional
-    public void saveSupplier(Supplier supplier) {
-        supplierDAO.saveSupplier(supplier);
+    @Transactional(readOnly = true)
+    public List<Supplier> getAllSuppliers() {
+        return supplierDAO.getAllSuppliers();
     }
 
     @Override
@@ -39,7 +39,6 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    @Transactional
     public void deleteSupplier(Long id) {
         supplierDAO.deleteSupplier(id);
     }
