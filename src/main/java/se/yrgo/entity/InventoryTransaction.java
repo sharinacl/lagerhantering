@@ -25,18 +25,25 @@ public class InventoryTransaction {
 
     // Constructors
     public InventoryTransaction(int quantity, Product product) {
+        this.quantity = quantity;
+        this.product = product;
         this.timestamp = LocalDateTime.now();
     }
 
     public InventoryTransaction(int quantity, TransactionType type, Product product) {
         this(quantity, product);
-        this.quantity = quantity;
         this.type = type;
         this.product = product;
     }
 
     public InventoryTransaction() {
 
+    }
+
+    public InventoryTransaction(Long id, int i, TransactionType transactionType) {
+        this.id = id;
+        this.quantity = i;
+        this.type = transactionType;
     }
 
     // Business method to validate transaction
@@ -101,4 +108,6 @@ public class InventoryTransaction {
                 Math.abs(quantity),  // Show absolute value for readability
                 product != null ? product.getName() : "Unknown");
     }
+
+
 }

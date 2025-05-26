@@ -60,9 +60,16 @@ public class ProductHibernateDAO implements ProductDAO {
 
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<Product> getAllProducts() {
-        Session session = sessionFactory.getCurrentSession();
-        return session.createQuery("FROM Product", Product.class).getResultList();
+        return sessionFactory.getCurrentSession()
+                .createQuery(
+                        "select distinct p " +
+                                "from Product p " +
+                                "left join fetch p.category " +
+                                "left join fetch p.suppliers"
+                )
+                .getResultList();
     }
 
     @Override
@@ -98,7 +105,8 @@ public class ProductHibernateDAO implements ProductDAO {
 
     @Override
     public void deleteAllProducts() {
-
+        Session session = sessionFactory.getCurrentSession();
+        session.createQuery("delete from Product").executeUpdate();
     }
 
 
@@ -124,6 +132,77 @@ public class ProductHibernateDAO implements ProductDAO {
     @Override
     public List<Product> getLowStockProducts() {
         return em.createQuery("FROM Product WHERE inventoryQuantity < reorderLevel", Product.class).getResultList();
+    }
+
+    // NEW IMPLEMENTATION METHODS FOR PRODUCT-SUPPLIER RELATIONSHIPS
+    @Override
+    public void addSupplierToProduct(Long productId, Long supplierId) {
+        Session session = sessionFactory.getCurrentSession();
+        Product product = session.get(Product.class, productId);
+        Supplier supplier = session.get(Supplier.class, supplierId);
+
+        if (product != null && supplier != null) {
+            product.addSupplier(supplier); // Uses the method we created in Product entity
+            session.update(product);
+        }
+    }
+
+    @Override
+    public void removeSupplierFromProduct(Long productId, Long supplierId) {
+        Session session = sessionFactory.getCurrentSession();
+        Product product = session.get(Product.class, productId);
+        Supplier supplier = session.get(Supplier.class, supplierId);
+
+        if (product != null && supplier != null) {
+            product.removeSupplier(supplier); // Uses the method we created in Product entity
+            session.update(product);
+        }
+    }
+
+    @Override
+    public List<Supplier> getSuppliersByProduct(Long productId) {
+        Session session = sessionFactory.getCurrentSession();
+        return session.createQuery(
+                        "SELECT s FROM Supplier s JOIN s.products p WHERE p.id = :productId", Supplier.class)
+                .setParameter("productId", productId)
+                .getResultList();
+    }
+
+    @Override
+    public boolean isProductSuppliedBy(Long productId, Long supplierId) {
+        Session session = sessionFactory.getCurrentSession();
+        Long count = session.createQuery(
+                        "SELECT COUNT(*) FROM Product p JOIN p.suppliers s WHERE p.id = :productId AND s.id = :supplierId", Long.class)
+                .setParameter("productId", productId)
+                .setParameter("supplierId", supplierId)
+                .uniqueResult();
+        return count > 0;
+    }
+
+    @Override
+    public int getSupplierCountForProduct(Long productId) {
+        Session session = sessionFactory.getCurrentSession();
+        Long count = session.createQuery(
+                        "SELECT COUNT(s) FROM Product p JOIN p.suppliers s WHERE p.id = :productId", Long.class)
+                .setParameter("productId", productId)
+                .uniqueResult();
+        return count.intValue();
+    }
+
+    @Override
+    public List<Product> getProductsWithoutSuppliers() {
+        Session session = sessionFactory.getCurrentSession();
+        return session.createQuery(
+                        "SELECT p FROM Product p WHERE p.suppliers IS EMPTY", Product.class)
+                .getResultList();
+    }
+
+    @Override
+    public List<Product> getProductsWithMultipleSuppliers() {
+        Session session = sessionFactory.getCurrentSession();
+        return session.createQuery(
+                        "SELECT p FROM Product p WHERE SIZE(p.suppliers) > 1", Product.class)
+                .getResultList();
     }
 
 }

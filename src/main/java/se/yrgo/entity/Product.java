@@ -1,9 +1,6 @@
 package se.yrgo.entity;
 
 import javax.persistence.*;
-import javax.persistence.CascadeType;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,10 +31,6 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
     @ManyToMany
     @JoinTable(
             name = "product_supplier",
@@ -48,17 +41,17 @@ public class Product {
 
 
     @OneToMany(mappedBy = "product", fetch = FetchType.EAGER)
-    private List<InventoryTransaction> transactions = new ArrayList<>();
+    private Set<InventoryTransaction> transactions = new HashSet<>();
 
     // Default constructor required by JPA
     public Product() {
     }
 
-    public Product(String name, String description, double price, Integer inventoryQuantity) {
+    public Product(String name, String description, double price, Category inventoryQuantity) {
         this.name = name;
         this.description = description;
         this.price = price;
-        this.inventoryQuantity = inventoryQuantity;
+        this.category = inventoryQuantity;
     }
 
     public Product(String name, int quantity, double price, Category category) {
@@ -69,6 +62,85 @@ public class Product {
 
     public Product(String name) {
         this.name = name;
+    }
+
+    public Product(String name, String desc, double price,
+                   int qty, int reorder, Category category, Supplier suppliers) {
+        this.name = name;
+        this.description = desc;
+        this.price = price;
+        this.inventoryQuantity = qty;
+        this.reorderLevel = reorder;
+        setCategory(category);               // use setter to handle both sides
+        this.suppliers.add(suppliers);
+
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+        category.getProducts().add(this);     // inverse-side hookup
+    }
+
+    /**
+     * Adds a supplier to this product and maintains bidirectional relationship
+     * @param supplier The supplier to add
+     */
+    public void addSupplier(Supplier supplier) {
+        if (supplier != null) {
+            this.suppliers.add(supplier);
+            supplier.getProducts().add(this);
+        }
+    }
+
+    /**
+     * Removes a supplier from this product and maintains bidirectional relationship
+     * @param supplier The supplier to remove
+     */
+    public void removeSupplier(Supplier supplier) {
+        if (supplier != null) {
+            this.suppliers.remove(supplier);
+            supplier.getProducts().remove(this);
+        }
+    }
+
+    /**
+     * Checks if this product is supplied by a specific supplier
+     * @param supplier The supplier to check
+     * @return true if the supplier supplies this product
+     */
+    public boolean isSuppliedBy(Supplier supplier) {
+        return suppliers.contains(supplier);
+    }
+
+    /**
+     * Gets the number of suppliers for this product
+     * @return the count of suppliers
+     */
+    public int getSupplierCount() {
+        return suppliers.size();
+    }
+
+    /**
+     * Gets all supplier names as a formatted string
+     * @return comma-separated list of supplier names
+     */
+    public String getSupplierNames() {
+        return suppliers.stream()
+                .map(Supplier::getName)
+                .reduce((name1, name2) -> name1 + ", " + name2)
+                .orElse("No suppliers");
+    }
+
+    /**
+     * Finds a supplier by name
+     * @param name The supplier name to search for
+     * @return the supplier if found, null otherwise
+     */
+    public Supplier findSupplierByName(String name) {
+        return suppliers.stream()
+                .filter(supplier -> supplier.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
     }
 
     // Getters and setters
@@ -126,14 +198,16 @@ public class Product {
     }
 
 
-    public void addCategory(Category category) {
-        this.category.add(category);
-        category.getProducts().add(this);
-    }
+//    public void addCategory(Category category) {
+//        this.category.add(category);
+//        category.getProducts().add(this);
+//    }
 
     public Set<Category> getCategories() {
-        Set<Category> categories = Set.of();
-        return categories;
+        if (category != null) {
+            return Set.of(category);
+        }
+        return new HashSet<>();
     }
 
     public Set<Supplier> getSuppliers() {
@@ -144,11 +218,11 @@ public class Product {
         this.suppliers = suppliers;
     }
 
-    public List<InventoryTransaction> getTransactions() {
+    public Set<InventoryTransaction> getTransactions() {
         return transactions;
     }
 
-    public void setTransactions(List<InventoryTransaction> transactions) {
+    public void setTransactions(Set<InventoryTransaction> transactions) {
         this.transactions = transactions;
     }
 
@@ -159,8 +233,20 @@ public class Product {
 
     @Override
     public String toString() {
-        return "Product [id=" + id + ", name=" + name + ", price=" + price + ", quantity=" + inventoryQuantity + "]";
+        return String.format(
+                "ProductID: %d, \nName: %s, \nPrice: %.2f, \nQuantity: %d, \nCategory: %s, \nSuppliers: %s\n",
+                id,
+                name,
+                price,
+                inventoryQuantity,
+                category != null ? category.getName() : "none",
+                String.join(", ", suppliers.stream()
+                        .map(Supplier::getName)
+                        .toList())
+        );
     }
+
+
 }
 
 

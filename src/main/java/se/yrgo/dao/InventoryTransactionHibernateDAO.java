@@ -40,7 +40,6 @@ public class InventoryTransactionHibernateDAO implements InventoryTransactionDAO
     public void deleteAllTransaction() {
         Session session = sessionFactory.getCurrentSession();
         session.createQuery("delete from InventoryTransaction").executeUpdate();
-        session.delete(this);
     }
 
 }

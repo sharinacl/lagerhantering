@@ -23,5 +23,12 @@ public interface ProductDAO {
     void updateProduct(Product product);
 
     List<Product> getLowStockProducts();
+    void addSupplierToProduct(Long productId, Long supplierId);
+    void removeSupplierFromProduct(Long productId, Long supplierId);
+    List<Supplier> getSuppliersByProduct(Long productId);
+    boolean isProductSuppliedBy(Long productId, Long supplierId);
+    int getSupplierCountForProduct(Long productId);
+    List<Product> getProductsWithoutSuppliers();
+    List<Product> getProductsWithMultipleSuppliers();
 
 }

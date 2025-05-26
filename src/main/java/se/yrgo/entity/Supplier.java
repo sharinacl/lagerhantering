@@ -46,6 +46,78 @@ public class Supplier {
         this.name = name;
     }
 
+    /**
+     * Adds a product to this supplier and maintains bidirectional relationship
+     * @param product The product to add
+     */
+    public void addProduct(Product product) {
+        if (product != null) {
+            this.products.add(product);
+            product.getSuppliers().add(this);
+        }
+    }
+
+    /**
+     * Removes a product from this supplier and maintains bidirectional relationship
+     * @param product The product to remove
+     */
+    public void removeProduct(Product product) {
+        if (product != null) {
+            this.products.remove(product);
+            product.getSuppliers().remove(this);
+        }
+    }
+
+    /**
+     * Checks if this supplier supplies a specific product
+     * @param product The product to check
+     * @return true if this supplier supplies the product
+     */
+    public boolean supplies(Product product) {
+        return products.contains(product);
+    }
+
+    /**
+     * Gets the number of products supplied by this supplier
+     * @return the count of products
+     */
+    public int getProductCount() {
+        return products.size();
+    }
+
+    /**
+     * Gets all product names as a formatted string
+     * @return comma-separated list of product names
+     */
+    public String getProductNames() {
+        return products.stream()
+                .map(Product::getName)
+                .reduce((name1, name2) -> name1 + ", " + name2)
+                .orElse("No products");
+    }
+
+    /**
+     * Finds a product by name
+     * @param name The product name to search for
+     * @return the product if found, null otherwise
+     */
+    public Product findProductByName(String name) {
+        return products.stream()
+                .filter(product -> product.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Gets total value of all products supplied by this supplier
+     * @return the sum of all product prices
+     */
+    public double getTotalProductValue() {
+        return products.stream()
+                .mapToDouble(Product::getPrice)
+                .sum();
+    }
+
     // Getters and Setters
 
     public Long getId() {

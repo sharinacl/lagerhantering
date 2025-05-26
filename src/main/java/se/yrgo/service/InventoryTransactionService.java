@@ -39,6 +39,6 @@ public interface InventoryTransactionService {
     void recordRestock(Product product, int quantity);
 
     @Transactional
-    void deleteAllTransactions();
+    void deleteAllTransactions(long l);
 
 }

@@ -25,12 +25,14 @@ public class Category {
 
     public void addProduct(Product product) {
         products.add(product);
-        product.getCategories().add(this); // sync reverse side
+        product.setCategory(this);
     }
 
     public void removeProduct(Product product) {
         products.remove(product);
-        product.getCategories().remove(this);
+        if (product.getCategory() != null && product.getCategory().equals(this)) {
+            product.setCategory(null);
+        }
     }
 
     public Category() {}
@@ -67,16 +69,9 @@ public class Category {
 
     @Override
     public String toString() {
-        return "Category{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", productCount=" + (products != null ? products.size() : 0) +
-                '}';
+        return String.format("CategoryID: %d, name: %s", id, name);
     }
 
-    public void add(Category category) {
-        category.add(category);
-    }
+
 
 }

@@ -1,62 +1,144 @@
 package se.yrgo.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import se.yrgo.dao.ProductDAO;
+import se.yrgo.dao.SupplierDAO;
+import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class SupplierServiceImpl implements SupplierService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private ProductDAO productDAO;
+    @Autowired
+    private SupplierDAO supplierDAO;
+
+//    @PersistenceContext
+//    private EntityManager entityManager;
 
     @Override
     public void saveSupplier(Supplier supplier) {
-        entityManager.persist(supplier);
+        supplierDAO.saveSupplier(supplier);
     }
 
     @Override
     public List<Supplier> getAllSuppliers() {
-        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
-//        return findAllSuppliers();
+        return supplierDAO.getAllSuppliers();
     }
 
     @Override
     public Supplier getSupplierById(Long id) {
-        List<Supplier> result = entityManager.createQuery(
-                        "SELECT DISTINCT s FROM Supplier s LEFT JOIN FETCH s.products WHERE s.id = :id", Supplier.class)
-                .setParameter("id", id)
-                .getResultList();
-
-        return result.isEmpty() ? null : result.get(0);
+        return supplierDAO.getSupplierById(id);
     }
 
-//    @Override
-//    public List<Supplier> getAllSuppliers() {
-//        return entityManager.createQuery("FROM Supplier", Supplier.class).getResultList();
-//    }
 
     @Override
     public void deleteSupplierById(Long id) {
-        Supplier supplier = entityManager.find(Supplier.class, id);
-        if (supplier != null) {
-            entityManager.remove(supplier);
-        }
+        supplierDAO.deleteSupplier(id);
     }
 
     @Override
     public void updateSupplier(Supplier supplier) {
-        entityManager.merge(supplier);
+        supplierDAO.updateSupplier(supplier);
     }
 
     @Override
     public void deleteAllSuppliers() {
-        entityManager.createQuery("DELETE FROM Supplier").executeUpdate();
+        supplierDAO.deleteAllSuppliers();
+    }
+
+    @Override
+    public void assignProductToSupplier(Long supplierId, Long productId) {
+        supplierDAO.addProductToSupplier(productId, supplierId);
+    }
+
+    @Override
+    public void removeProductFromSupplier(Long supplierId, Long productId) {
+        supplierDAO.removeProductFromSupplier(productId, supplierId);
+    }
+
+    @Override
+    public List<Product> getProductsForSupplier(Long supplierId) {
+        return supplierDAO.getProductsBySupplier(supplierId);
+    }
+
+    @Override
+    public boolean doesSupplierSupplyProduct(Long supplierId, Long productId) {
+        return supplierDAO.doesSupplierSupplyProduct(productId, supplierId);
+    }
+
+    @Override
+    public int getProductCountForSupplier(Long supplierId) {
+        return supplierDAO.getProductCountForSupplier(supplierId);
+    }
+
+    @Override
+    public double getTotalProductValueForSupplier(Long supplierId) {
+        return supplierDAO.getTotalProductValueForSupplier(supplierId);
+    }
+
+    @Override
+    public List<Supplier> getSuppliersWithoutProducts() {
+        return supplierDAO.getSuppliersWithoutProducts();
+    }
+
+    @Override
+    public List<Supplier> getTopSuppliersByProductCount(int limit) {
+        return supplierDAO.getSuppliersWithMostProducts(limit);
+    }
+
+    @Override
+    public void establishProductRelationship(String supplierName, String productName) {
+        Supplier supplier = supplierDAO.getSupplierByName(supplierName);
+        if (supplier == null) {
+            throw new IllegalArgumentException("Supplier " + supplierName + " not found");
+        }
+
+        List<Product> products = productDAO.getAllProducts();
+        Product product = products.stream()
+                .filter(p -> p.getName().equals(productName))
+                .findFirst().orElse(null);
+
+        if (product == null) {
+            throw new IllegalArgumentException("Product " + productName + " not found");
+        }
+
+    }
+
+    @Override
+    public void terminateProductRelationship(String supplierName, String productName) {
+        Supplier supplier = supplierDAO.getSupplierByName(supplierName);
+        if (supplier == null) {
+            throw new IllegalArgumentException("Supplier " + supplierName + " not found");
+        }
+
+        Product product = productDAO.getProductByName(productName);
+        if (product == null) {
+            throw new IllegalArgumentException("Product relationship " + productName + " not found");
+        }
+
+        supplierDAO.removeProductFromSupplier(product.getId(), supplier.getId());
+    }
+
+    @Override
+    public List<String> getProductNamesForSupplier(String supplierName) {
+        Supplier supplier = supplierDAO.getSupplierByName(supplierName);
+        if (supplier == null) {
+            throw new IllegalArgumentException("Supplier " + supplierName + " not found");
+        }
+        return supplierDAO.getProductsBySupplier(supplier.getId())
+                .stream()
+                .map(Product::getName)
+                .collect(Collectors.toList());
     }
 
 }

@@ -17,7 +17,9 @@ public class CategoryHibernateDAO implements CategoryDAO {
     @Override
     public Category getCategoryByName(String name) {
         Session session = sessionFactory.getCurrentSession();
-        return session.get(Category.class, name);
+        return session.createQuery("FROM Category WHERE name = :name", Category.class)
+                .setParameter("name", name)
+                .uniqueResult();
     }
 
     @Override
@@ -27,11 +29,12 @@ public class CategoryHibernateDAO implements CategoryDAO {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<Category> findAll() {
         Session session = sessionFactory.getCurrentSession();
         return session.createQuery(
-                        "SELECT DISTINCT c FROM Category c LEFT JOIN FETCH c.products", Category.class)
-                .getResultList();
+                        "SELECT DISTINCT c FROM Category c LEFT JOIN FETCH c.products")
+                .list();
     }
 
     @Override

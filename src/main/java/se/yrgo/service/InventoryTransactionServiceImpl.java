@@ -8,7 +8,6 @@ import se.yrgo.dao.ProductDAO;
 import se.yrgo.entity.InventoryTransaction;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.TransactionType;
-import se.yrgo.exception.InvalidTransactionException;
 import se.yrgo.exception.ProductNotFoundException;
 
 import java.time.LocalDateTime;
@@ -105,7 +104,7 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
     }
 
     @Override
-    public void deleteAllTransactions() {
+    public void deleteAllTransactions(long l) {
         transactionDAO.deleteAllTransaction();
     }
 

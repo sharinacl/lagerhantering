@@ -2,762 +2,676 @@ package se.yrgo.app;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import se.yrgo.entity.*;
-import se.yrgo.service.*;
+import se.yrgo.entity.Category;
+import se.yrgo.entity.Product;
+import se.yrgo.entity.Supplier;
+import se.yrgo.exception.ProductNotFoundException;
+import se.yrgo.exception.InvalidTransactionException;
+import se.yrgo.service.CategoryService;
+import se.yrgo.service.InventoryTransactionService;
+import se.yrgo.service.ProductService;
+import se.yrgo.service.SupplierService;
 
-import java.math.BigDecimal;
-import java.util.List;
 import java.util.Scanner;
-import java.util.Set;
+import java.util.InputMismatchException;
 
 public class MainApp {
-    private static ProductService productService;
-    private static SupplierService supplierService;
-    private static CategoryService categoryService;
-    private static InventoryTransactionService transactionService;
-    private static Scanner scanner = new Scanner(System.in);
+    private static final Scanner scanner = new Scanner(System.in);
+
+    // 1) Load Spring context (scans for @Component, @Service, @PostConstruct, etc.)
+    private static final ApplicationContext ctx =
+            new ClassPathXmlApplicationContext("application.xml");
+
+    // 2) Lookup by interface — works even if @Service has no explicit name
+    private static final CategoryService categoryService =
+            ctx.getBean(CategoryService.class);
+    private static final ProductService productService =
+            ctx.getBean(ProductService.class);
+    private static final SupplierService supplierService =
+            ctx.getBean(SupplierService.class);
+    private static final InventoryTransactionService inventoryService =
+            ctx.getBean(InventoryTransactionService.class);
 
     public static void main(String[] args) {
-        ApplicationContext context = new ClassPathXmlApplicationContext("application.xml");
-
-        productService = context.getBean(ProductService.class);
-        supplierService = context.getBean(SupplierService.class);
-        categoryService = context.getBean(CategoryService.class);
-        transactionService = context.getBean(InventoryTransactionService.class);
-
-        // Initialize with mock data
-        new MockDataInitializer(context).initializeAllData();
-
-        boolean running = true;
-
-        while (running) {
-            displayMainMenu();
-            int choice = getIntInput("Select option: ");
-
-            switch (choice) {
-                case 1:
-                    productMenu();
-                    break;
-                case 2:
-                    categoryMenu();
-                    break;
-                case 3:
-                    supplierMenu();
-                    break;
-                case 4:
-                    transactionMenu();
-                    break;
-                case 5:
-                    displayInventoryReport();
-                    break;
-                case 6:
-                    running = false;
-                    System.out.println("Shutting down inventory management system...");
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-            }
-        }
-        scanner.close();
-    }
-
-    private static void displayMainMenu() {
-        System.out.println("\n========================================");
-        System.out.println("    INVENTORY MANAGEMENT SYSTEM - MAIN MENU");
-        System.out.println("========================================");
-        System.out.println("1. Product Management (CRUD)");
-        System.out.println("2. Category Management (CRUD)");
-        System.out.println("3. Supplier Management (CRUD)");
-        System.out.println("4. Inventory Transactions");
-        System.out.println("5. Inventory Report");
-        System.out.println("6. Exit");
-        System.out.println("========================================");
-    }
-
-    // PRODUCT CRUD OPERATIONS
-    private static void productMenu() {
-        boolean back = false;
-        while (!back) {
-            System.out.println("\n--- PRODUCT MANAGEMENT ---");
-            System.out.println("1. View all products");
-            System.out.println("2. Find product by ID");
-            System.out.println("3. Add new product");
-            System.out.println("4. Update product");
-            System.out.println("5. Delete product");
-            System.out.println("6. Back to main menu");
-
-            int choice = getIntInput("Select option: ");
-
-            switch (choice) {
-                case 1:
-                    viewAllProducts();
-                    break;
-                case 2:
-                    findProductById();
-                    break;
-                case 3:
-                    createProduct();
-                    break;
-                case 4:
-                    updateProduct();
-                    break;
-                case 5:
-                    deleteProduct();
-                    break;
-                case 6:
-                    back = true;
-                    break;
-                default:
-                    System.out.println("Invalid choice.");
-            }
-        }
-    }
-
-    private static void viewAllProducts() {
-        System.out.println("\n=== ALL PRODUCTS ===");
-        List<Product> products = productService.getAllProducts();
-        if (products.isEmpty()) {
-            System.out.println("No products found.");
-        } else {
-            System.out.printf("%-5s %-20s %-10s %-8s %-15s %-10s%n",
-                    "ID", "Name", "Price", "Qty", "Category", "Reorder Lvl");
-            System.out.println("-".repeat(80));
-            for (Product p : products) {
-                System.out.printf("%-5d %-20s %-10.2f %-8d %-15s %-10d%n",
-                        p.getId(),
-                        p.getName(),
-                        p.getPrice(),
-                        p.getQuantity(),
-                        p.getCategory() != null ? p.getCategory().getName() : "N/A",
-                        p.getReorderLevel());
-            }
-        }
-    }
-
-    private static void findProductById() {
-        long id = getLongInput("Enter product ID: ");
-        Product product = productService.findByIdWithTransactionsAndSuppliers(id);
-        if (product != null) {
-            displayProductDetails(product);
-        } else {
-            System.out.println("Product with ID " + id + " not found.");
-        }
-    }
-
-    private static void createProduct() {
-        System.out.println("\n=== ADD NEW PRODUCT ===");
-        String name = getStringInput("Product name: ");
-        String description = getStringInput("Description: ");
-        double price = getDoubleInput("Price: ");
-        int quantity = getIntInput("Quantity: ");
-        int reorderLevel = getIntInput("Reorder level: ");
-
-        Product product = new Product();
-        product.setName(name);
-        product.setDescription(description);
-        product.setPrice(price);
-        product.setQuantity(quantity);
-        product.setReorderLevel(reorderLevel);
-
-        // Optional: Add category
-        System.out.println("Available categories:");
-        List<Category> categories = categoryService.getAllCategories();
-        for (Category cat : categories) {
-            System.out.println(cat.getId() + ". " + cat.getName());
-        }
-
-        long categoryId = getLongInput("Select category ID (0 for none): ");
-        if (categoryId > 0) {
-            Category category = categoryService.getCategoryById(categoryId);
-            if (category != null) {
-                product.setCategory(category);
-            }
-        }
-
-        productService.saveProduct(product);
-        System.out.println("Product created with ID: " + product.getId());
-    }
-
-    private static void updateProduct() {
-        long id = getLongInput("Enter ID of product to update: ");
-        Product product = productService.findByIdWithTransactionsAndSuppliers(id);
-
-        if (product == null) {
-            System.out.println("Product not found.");
-            return;
-        }
-
-        System.out.println("Current product information:");
-        displayProductDetails(product);
-
-        System.out.println("\nEnter new values (press Enter to keep current value):");
-
-        String newName = getStringInput("New name [" + product.getName() + "]: ");
-        if (!newName.trim().isEmpty()) {
-            product.setName(newName);
-        }
-
-        String newDesc = getStringInput("New description [" + product.getDescription() + "]: ");
-        if (!newDesc.trim().isEmpty()) {
-            product.setDescription(newDesc);
-        }
-
-        String priceStr = getStringInput("New price [" + product.getPrice() + "]: ");
-        if (!priceStr.trim().isEmpty()) {
-            product.setPrice(Double.parseDouble(priceStr));
-        }
-
-        String qtyStr = getStringInput("New quantity [" + product.getQuantity() + "]: ");
-        if (!qtyStr.trim().isEmpty()) {
-            product.setQuantity(Integer.parseInt(qtyStr));
-        }
-
-        productService.updateProduct(product);
-        System.out.println("Product updated.");
-    }
-
-    private static void deleteProduct() {
-        long id = getLongInput("Enter ID of product to delete: ");
-        Product product = productService.findByIdWithTransactionsAndSuppliers(id);
-
-        if (product == null) {
-            System.out.println("Product not found.");
-            return;
-        }
-
-        System.out.println("Product to delete:");
-        displayProductDetails(product);
-
-        String confirm = getStringInput("Are you sure you want to delete this product? (yes/no): ");
-        if (confirm.equalsIgnoreCase("yes")) {
-            productService.deleteProduct(id);
-            System.out.println("Product deleted.");
-        } else {
-            System.out.println("Deletion cancelled.");
-        }
-    }
-
-    // CATEGORY CRUD OPERATIONS
-    private static void categoryMenu() {
-        boolean back = false;
-        while (!back) {
-            System.out.println("\n--- CATEGORY MANAGEMENT ---");
-            System.out.println("1. View all categories");
-            System.out.println("2. Find category by ID");
-            System.out.println("3. Add new category");
-            System.out.println("4. Update category");
-            System.out.println("5. Delete category");
-            System.out.println("6. Back to main menu");
-
-            int choice = getIntInput("Select option: ");
-
-            switch (choice) {
-                case 1:
-                    viewAllCategories();
-                    break;
-                case 2:
-                    findCategoryById();
-                    break;
-                case 3:
-                    createCategory();
-                    break;
-                case 4:
-                    updateCategory();
-                    break;
-                case 5:
-                    deleteCategory();
-                    break;
-                case 6:
-                    back = true;
-                    break;
-                default:
-                    System.out.println("Invalid choice.");
-            }
-        }
-    }
-
-    private static void viewAllCategories() {
-        System.out.println("\n=== ALL CATEGORIES ===");
-        List<Category> categories = categoryService.getAllCategories();
-        if (categories.isEmpty()) {
-            System.out.println("No categories found.");
-        } else {
-            System.out.printf("%-5s %-20s %-30s %-10s%n", "ID", "Name", "Description", "Products");
-            System.out.println("-".repeat(75));
-            for (Category c : categories) {
-                System.out.printf("%-5d %-20s %-30s %-10d%n",
-                        c.getId(),
-                        c.getName(),
-                        c.getDescription() != null ? c.getDescription() : "N/A",
-                        c.getProducts().size());
-            }
-        }
-    }
-
-    private static void findCategoryById() {
-        long id = getLongInput("Enter category ID: ");
-        Category category = categoryService.getCategoryById(id);
-        if (category != null) {
-            displayCategoryDetails(category);
-        } else {
-            System.out.println("Category with ID " + id + " not found.");
-        }
-    }
-
-    private static void createCategory() {
-        System.out.println("\n=== ADD NEW CATEGORY ===");
-        String name = getStringInput("Category name: ");
-        String description = getStringInput("Description: ");
-
-        Category category = new Category(name, description);
-        categoryService.saveCategory(category);
-        System.out.println("Category created with ID: " + category.getId());
-    }
-
-    private static void updateCategory() {
-        long id = getLongInput("Enter ID of category to update: ");
-        Category category = categoryService.getCategoryById(id);
-
-        if (category == null) {
-            System.out.println("Category not found.");
-            return;
-        }
-
-        System.out.println("Current category information:");
-        displayCategoryDetails(category);
-
-        System.out.println("\nEnter new values (press Enter to keep current value):");
-
-        String newName = getStringInput("New name [" + category.getName() + "]: ");
-        if (!newName.trim().isEmpty()) {
-            category.setName(newName);
-        }
-
-        String newDesc = getStringInput("New description [" + category.getDescription() + "]: ");
-        if (!newDesc.trim().isEmpty()) {
-            category.setDescription(newDesc);
-        }
-
-        categoryService.updateCategory(category);
-        System.out.println("Category updated.");
-    }
-
-    private static void deleteCategory() {
-        long id = getLongInput("Enter ID of category to delete: ");
-        Category category = categoryService.getCategoryById(id);
-
-        if (category == null) {
-            System.out.println("Category not found.");
-            return;
-        }
-
-        if (!category.getProducts().isEmpty()) {
-            System.out.println("Cannot delete category containing products (" +
-                    category.getProducts().size() + " products).");
-            return;
-        }
-
-        System.out.println("Category to delete:");
-        displayCategoryDetails(category);
-
-        String confirm = getStringInput("Are you sure you want to delete this category? (yes/no): ");
-        if (confirm.equalsIgnoreCase("yes")) {
-            categoryService.deleteCategory(id);
-            System.out.println("Category deleted.");
-        } else {
-            System.out.println("Deletion cancelled.");
-        }
-    }
-
-    // SUPPLIER CRUD OPERATIONS
-    private static void supplierMenu() {
-        boolean back = false;
-        while (!back) {
-            System.out.println("\n--- SUPPLIER MANAGEMENT ---");
-            System.out.println("1. View all suppliers");
-            System.out.println("2. Find supplier by ID");
-            System.out.println("3. Add new supplier");
-            System.out.println("4. Update supplier");
-            System.out.println("5. Delete supplier");
-            System.out.println("6. Back to main menu");
-
-            int choice = getIntInput("Select option: ");
-
-            switch (choice) {
-                case 1:
-                    viewAllSuppliers();
-                    break;
-                case 2:
-                    getSupplierById();
-                    break;
-                case 3:
-                    createSupplier();
-                    break;
-                case 4:
-                    updateSupplier();
-                    break;
-                case 5:
-                    deleteSupplier();
-                    break;
-                case 6:
-                    back = true;
-                    break;
-                default:
-                    System.out.println("Invalid choice.");
-            }
-        }
-    }
-
-    private static void viewAllSuppliers() {
-        System.out.println("\n=== ALL SUPPLIERS ===");
-        List<Supplier> suppliers = supplierService.getAllSuppliers();
-        if (suppliers.isEmpty()) {
-            System.out.println("No suppliers found.");
-        } else {
-            System.out.printf("%-5s %-20s %-20s %-25s %-15s%n",
-                    "ID", "Company", "Contact", "Email", "Phone");
-            System.out.println("-".repeat(90));
-            for (Supplier s : suppliers) {
-                System.out.printf("%-5d %-20s %-20s %-25s %-15s%n",
-                        s.getId(),
-                        s.getName() != null ? s.getName() : "N/A",
-                        s.getContactName() != null ? s.getContactName() : "N/A",
-                        s.getEmail() != null ? s.getEmail() : "N/A",
-                        s.getPhone() != null ? s.getPhone() : "N/A");
-            }
-        }
-    }
-
-    private static void getSupplierById() {
-        Long id = (long) getIntInput("Enter supplier ID: ");
-        Supplier supplier = supplierService.getSupplierById(id);
-        if (supplier != null) {
-            displaySupplierDetails(supplier);
-        } else {
-            System.out.println("Supplier with ID " + id + " not found.");
-        }
-    }
-
-    private static void createSupplier() {
-        System.out.println("\n=== ADD NEW SUPPLIER ===");
-        String name = getStringInput("Company name: ");
-        String contactName = getStringInput("Contact person: ");
-        String email = getStringInput("Email: ");
-        String phone = getStringInput("Phone: ");
-        String address = getStringInput("Address: ");
-
-        Supplier supplier = new Supplier(name, contactName, email, phone, address);
-        supplierService.saveSupplier(supplier);
-        System.out.println("Supplier created with ID: " + supplier.getId());
-    }
-
-    private static void updateSupplier() {
-        Long id = (long) getIntInput("Enter ID of supplier to update: ");
-        Supplier supplier = supplierService.getSupplierById(id);
-
-        if (supplier == null) {
-            System.out.println("Supplier not found.");
-            return;
-        }
-
-        System.out.println("Current supplier information:");
-        displaySupplierDetails(supplier);
-
-        System.out.println("\nEnter new values (press Enter to keep current value):");
-
-        String newName = getStringInput("New company name [" + supplier.getName() + "]: ");
-        if (!newName.trim().isEmpty()) {
-            supplier.setName(newName);
-        }
-
-        String newContact = getStringInput("New contact person [" + supplier.getContactName() + "]: ");
-        if (!newContact.trim().isEmpty()) {
-            supplier.setContactName(newContact);
-        }
-
-        String newEmail = getStringInput("New email [" + supplier.getEmail() + "]: ");
-        if (!newEmail.trim().isEmpty()) {
-            supplier.setEmail(newEmail);
-        }
-
-        String newPhone = getStringInput("New phone number [" + supplier.getPhone() + "]: ");
-        if (!newPhone.trim().isEmpty()) {
-            supplier.setPhone(newPhone);
-        }
-
-        String newAddress = getStringInput("New address [" + supplier.getAddress() + "]: ");
-        if (!newAddress.trim().isEmpty()) {
-            supplier.setAddress(newAddress);
-        }
-
-        supplierService.updateSupplier(supplier);
-        System.out.println("Supplier updated.");
-    }
-
-    private static void deleteSupplier() {
-        Long id = (long) getIntInput("Enter ID of supplier to delete: ");
-        Supplier supplier = supplierService.getSupplierById(id);
-
-        if (supplier == null) {
-            System.out.println("Supplier not found.");
-            return;
-        }
-
-        System.out.println("Supplier to delete:");
-        displaySupplierDetails(supplier);
-
-        String confirm = getStringInput("Are you sure you want to delete this supplier? (yes/no): ");
-        if (confirm.equalsIgnoreCase("yes")) {
-            supplierService.deleteSupplierById(id);
-            System.out.println("Supplier deleted.");
-        } else {
-            System.out.println("Deletion cancelled.");
-        }
-    }
-
-    // TRANSACTION OPERATIONS
-    private static void transactionMenu() {
-        boolean back = false;
-        while (!back) {
-            System.out.println("\n--- INVENTORY TRANSACTIONS ---");
-            System.out.println("1. View all transactions");
-            System.out.println("2. Record sale");
-            System.out.println("3. Record restock");
-            System.out.println("4. View transactions for product");
-            System.out.println("5. Back to main menu");
-
-            int choice = getIntInput("Select option: ");
-
-            switch (choice) {
-                case 1:
-                    viewAllTransactions();
-                    break;
-                case 2:
-                    recordSale();
-                    break;
-                case 3:
-                    recordRestock();
-                    break;
-                case 4:
-                    viewTransactionsForProduct();
-                    break;
-                case 5:
-                    back = true;
-                    break;
-                default:
-                    System.out.println("Invalid choice.");
-            }
-        }
-    }
-
-    private static void viewAllTransactions() {
-        System.out.println("\n=== ALL TRANSACTIONS ===");
-        List<InventoryTransaction> transactions = transactionService.getAllTransactions();
-        if (transactions.isEmpty()) {
-            System.out.println("No transactions found.");
-        } else {
-            System.out.printf("%-5s %-20s %-10s %-8s %-20s%n",
-                    "ID", "Product", "Type", "Qty", "Date/Time");
-            System.out.println("-".repeat(70));
-            for (InventoryTransaction t : transactions) {
-                System.out.printf("%-5d %-20s %-10s %-8d %-20s%n",
-                        t.getId(),
-                        t.getProduct() != null ? t.getProduct().getName() : "N/A",
-                        t.getType(),
-                        t.getQuantity(),
-                        t.getTimestamp());
-            }
-        }
-    }
-
-    private static void recordSale() {
-        System.out.println("\n=== RECORD SALE ===");
-        long productId = getLongInput("Product ID: ");
-        Product product = productService.getProductById(productId);
-
-        if (product == null) {
-            System.out.println("Product not found.");
-            return;
-        }
-
-        System.out.println("Selected product: " + product.getName() + " (Available: " + product.getQuantity() + ")");
-        int quantity = getIntInput("Quantity sold: ");
-
-        if (quantity > product.getQuantity()) {
-            System.out.println("Insufficient stock! Available: " + product.getQuantity());
-            return;
-        }
-
-        InventoryTransaction transaction = new InventoryTransaction(-quantity, TransactionType.SALE, product);
-        transactionService.saveTransaction(transaction);
-
-        // Update product quantity
-        product.setQuantity(product.getQuantity() - quantity);
-        productService.updateProduct(product);
-
-        System.out.println("Sale recorded. New stock level: " + product.getQuantity());
-    }
-
-    private static void recordRestock() {
-        System.out.println("\n=== RECORD RESTOCK ===");
-        long productId = getLongInput("Product ID: ");
-        Product product = productService.getProductById(productId);
-
-        if (product == null) {
-            System.out.println("Product not found.");
-            return;
-        }
-
-        System.out.println("Selected product: " + product.getName() + " (Current stock: " + product.getQuantity() + ")");
-        int quantity = getIntInput("Restock quantity: ");
-
-        InventoryTransaction transaction = new InventoryTransaction(quantity, TransactionType.RESTOCK, product);
-        transactionService.saveTransaction(transaction);
-
-        // Update product quantity
-        product.setQuantity(product.getQuantity() + quantity);
-        productService.updateProduct(product);
-
-        System.out.println("Restock recorded. New stock level: " + product.getQuantity());
-    }
-
-    private static void viewTransactionsForProduct() {
-        long productId = getLongInput("Enter product ID: ");
-        Product product = productService.getProductById(productId);
-
-        if (product == null) {
-            System.out.println("Product not found.");
-            return;
-        }
-
-        System.out.println("\n=== TRANSACTIONS FOR " + product.getName().toUpperCase() + " ===");
-        List<InventoryTransaction> transactions = product.getTransactions();
-
-        if (transactions.isEmpty()) {
-            System.out.println("No transactions found for this product.");
-        } else {
-            System.out.printf("%-10s %-8s %-20s%n", "Type", "Qty", "Date/Time");
-            System.out.println("-".repeat(45));
-            for (InventoryTransaction t : transactions) {
-                System.out.printf("%-10s %-8d %-20s%n",
-                        t.getType(),
-                        t.getQuantity(),
-                        t.getTimestamp());
-            }
-        }
-    }
-
-    // INVENTORY REPORT
-    private static void displayInventoryReport() {
-        System.out.println("\n========== INVENTORY REPORT ==========");
-
-        List<Product> products = productService.getAllProducts();
-        List<Category> categories = categoryService.getAllCategoriesWithProducts();
-        List<Supplier> suppliers = supplierService.getAllSuppliers();
-
-        System.out.println("Total products: " + products.size());
-        System.out.println("Total categories: " + categories.size());
-        System.out.println("Total suppliers: " + suppliers.size());
-
-        System.out.println("\n--- LOW STOCK PRODUCTS ---");
-        boolean lowStockFound = false;
-        for (Product p : products) {
-            if (p.getQuantity() <= p.getReorderLevel()) {
-                if (!lowStockFound) {
-                    System.out.printf("%-20s %-8s %-15s%n", "Product", "Qty", "Reorder Level");
-                    System.out.println("-".repeat(50));
-                    lowStockFound = true;
+        while (true) {
+            try {
+                System.out.println("\n=== Inventory Management System ===");
+                System.out.println("1. Manage Categories");
+                System.out.println("2. Manage Products");
+                System.out.println("3. Manage Suppliers");
+                System.out.println("4. Manage Inventory Transactions");
+                System.out.println("5. Exit");
+                System.out.print("Select an option: ");
+                String choice = scanner.nextLine();
+
+                switch (choice) {
+                    case "1" -> categoryMenu();
+                    case "2" -> productMenu();
+                    case "3" -> supplierMenu();
+                    case "4" -> inventoryMenu();
+                    case "5" -> {
+                        System.out.println("Exiting. Goodbye!");
+                        ((ClassPathXmlApplicationContext) ctx).close();
+                        return;
+                    }
+                    default -> System.out.println("Invalid option. Please select 1-5.");
                 }
-                System.out.printf("%-20s %-8d %-15d%n", p.getName(), p.getQuantity(), p.getReorderLevel());
+            } catch (Exception e) {
+                System.err.println("An unexpected error occurred: " + e.getMessage());
+                System.out.println("Please try again.");
             }
         }
-        if (!lowStockFound) {
-            System.out.println("No products with low stock.");
-        }
-
-        System.out.println("\n--- CATEGORIES AND PRODUCT COUNTS ---");
-        if (!categories.isEmpty()) {
-            System.out.printf("%-20s %-10s%n", "Category", "Products");
-            System.out.println("-".repeat(35));
-            for (Category c : categories) {
-                System.out.printf("%-20s %-10d%n", c.getName(), c.getProducts().size());
-            }
-        }
-
-        System.out.println("==================================");
     }
 
-    // UTILITY METHODS
-    private static void displayProductDetails(Product product) {
-        System.out.println("\n--- PRODUCT DETAILS ---");
-        System.out.println("ID: " + product.getId());
-        System.out.println("Name: " + product.getName());
-        System.out.println("Description: " + product.getDescription());
-        System.out.println("Price: " + product.getPrice() + " kr");
-        System.out.println("Stock quantity: " + product.getQuantity());
-        System.out.println("Reorder level: " + product.getReorderLevel());
-        System.out.println("Category: " + (product.getCategory() != null ? product.getCategory().getName() : "None"));
-        System.out.println("Number of suppliers: " + product.getSuppliers().size());
-    }
-
-    private static void displayCategoryDetails(Category category) {
-        System.out.println("\n--- CATEGORY DETAILS ---");
-        System.out.println("ID: " + category.getId());
-        System.out.println("Name: " + category.getName());
-        System.out.println("Description: " + category.getDescription());
-        System.out.println("Product count: " + category.getProducts().size());
-    }
-
-    private static void displaySupplierDetails(Supplier supplier) {
-        System.out.println("\n--- SUPPLIER DETAILS ---");
-        System.out.println("ID: " + supplier.getId());
-        System.out.println("Company: " + supplier.getName());
-        System.out.println("Contact: " + supplier.getContactName());
-        System.out.println("Email: " + supplier.getEmail());
-        System.out.println("Phone: " + supplier.getPhone());
-        System.out.println("Address: " + supplier.getAddress());
-        System.out.println("Product count: " + supplier.getProducts().size());
-    }
-
-    // INPUT UTILITY METHODS
-    private static String getStringInput(String prompt) {
-        System.out.print(prompt);
-        return scanner.nextLine();
-    }
-
-    private static int getIntInput(String prompt) {
+    private static void categoryMenu() {
         while (true) {
             try {
-                System.out.print(prompt);
-                int value = Integer.parseInt(scanner.nextLine());
-                return value;
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number. Please try again.");
+                System.out.println("\n--- Category Menu ---");
+                System.out.println("1. Create Category");
+                System.out.println("2. List All Categories");
+                System.out.println("3. Find Category by ID");
+                System.out.println("4. Find Category by Name");
+                System.out.println("5. Update Category");
+                System.out.println("6. Delete Category");
+                System.out.println("7. Delete All Categories");
+                System.out.println("8. Back");
+                System.out.print("Choose an option: ");
+
+                String choice = scanner.nextLine();
+                switch (choice) {
+                    case "1" -> {
+                        try {
+                            System.out.print("Enter category name: ");
+                            String name = scanner.nextLine().trim();
+                            if (name.isEmpty()) {
+                                System.out.println("Category name cannot be empty.");
+                                break;
+                            }
+                            categoryService.saveCategory(new Category(name));
+                            System.out.println("Category created successfully.");
+                        } catch (Exception e) {
+                            System.err.println("Error creating category: " + e.getMessage());
+                        }
+                    }
+                    case "2" -> {
+                        try {
+                            var categories = categoryService.getAllCategories();
+                            if (categories.isEmpty()) {
+                                System.out.println("No categories found.");
+                            } else {
+                                categories.forEach(System.out::println);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error retrieving categories: " + e.getMessage());
+                        }
+                    }
+                    case "3" -> {
+                        try {
+                            System.out.print("Enter category ID: ");
+                            long id = parseLong(scanner.nextLine());
+                            Category category = categoryService.getCategoryById(id);
+                            if (category != null) {
+                                System.out.println(category);
+                            } else {
+                                System.out.println("Category not found with ID: " + id);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error finding category: " + e.getMessage());
+                        }
+                    }
+                    case "4" -> {
+                        try {
+                            System.out.print("Enter category name: ");
+                            String name = scanner.nextLine().trim();
+                            if (name.isEmpty()) {
+                                System.out.println("Category name cannot be empty.");
+                                break;
+                            }
+                            Category category = categoryService.getCategoryByName(name);
+                            if (category != null) {
+                                System.out.println(category);
+                            } else {
+                                System.out.println("Category not found with name: " + name);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error finding category: " + e.getMessage());
+                        }
+                    }
+                    case "5" -> {
+                        try {
+                            System.out.print("Enter category ID: ");
+                            long id = parseLong(scanner.nextLine());
+                            Category c = categoryService.getCategoryById(id);
+                            if (c == null) {
+                                System.out.println("Category not found with ID: " + id);
+                                break;
+                            }
+                            System.out.print("Enter new name: ");
+                            String newName = scanner.nextLine().trim();
+                            if (newName.isEmpty()) {
+                                System.out.println("Category name cannot be empty.");
+                                break;
+                            }
+                            c.setName(newName);
+                            categoryService.updateCategory(c);
+                            System.out.println("Category updated successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error updating category: " + e.getMessage());
+                        }
+                    }
+                    case "6" -> {
+                        try {
+                            System.out.print("Enter category ID to delete: ");
+                            long id = parseLong(scanner.nextLine());
+                            categoryService.deleteCategory(id);
+                            System.out.println("Category deleted successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error deleting category: " + e.getMessage());
+                        }
+                    }
+                    case "7" -> {
+                        try {
+                            System.out.print("Are you sure you want to delete all categories? (yes/no): ");
+                            String confirm = scanner.nextLine().trim().toLowerCase();
+                            if ("yes".equals(confirm)) {
+                                categoryService.deleteAllCategories();
+                                System.out.println("All categories deleted successfully.");
+                            } else {
+                                System.out.println("Operation cancelled.");
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error deleting categories: " + e.getMessage());
+                        }
+                    }
+                    case "8" -> { return; }
+                    default -> System.out.println("Invalid option. Please select 1-8.");
+                }
+            } catch (Exception e) {
+                System.err.println("An unexpected error occurred: " + e.getMessage());
             }
         }
     }
 
-    private static long getLongInput(String prompt) {
+    private static void productMenu() throws ProductNotFoundException {
         while (true) {
             try {
-                System.out.print(prompt);
-                long value = Long.parseLong(scanner.nextLine());
-                return value;
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number. Please try again.");
+                System.out.println("\n--- Product Menu ---");
+                System.out.println("1. Create Product");
+                System.out.println("2. List All Products");
+                System.out.println("3. Find Product by ID");
+                System.out.println("4. Find Product by Name");
+                System.out.println("5. Update Product");
+                System.out.println("6. Delete Product");
+                System.out.println("7. List by Category");
+                System.out.println("8. List by Supplier");
+                System.out.println("9. Back");
+                System.out.print("Choose an option: ");
+
+                String choice = scanner.nextLine();
+                switch (choice) {
+                    case "1" -> {
+                        try {
+                            // Basic fields
+                            System.out.print("Enter product name: ");
+                            String name = scanner.nextLine().trim();
+                            if (name.isEmpty()) {
+                                System.out.println("Product name cannot be empty.");
+                                break;
+                            }
+
+                            System.out.print("Enter description: ");
+                            String desc = scanner.nextLine().trim();
+
+                            System.out.print("Enter price: ");
+                            double price = parseDouble(scanner.nextLine());
+                            if (price < 0) {
+                                System.out.println("Price cannot be negative.");
+                                break;
+                            }
+
+                            System.out.print("Enter quantity: ");
+                            int quantity = parseInt(scanner.nextLine());
+                            if (quantity < 0) {
+                                System.out.println("Quantity cannot be negative.");
+                                break;
+                            }
+
+                            System.out.print("Enter reorder level: ");
+                            int reorderLevel = parseInt(scanner.nextLine());
+                            if (reorderLevel < 0) {
+                                System.out.println("Reorder level cannot be negative.");
+                                break;
+                            }
+
+                            // Choose category
+                            var categories = categoryService.getAllCategories();
+                            if (categories.isEmpty()) {
+                                System.out.println("No categories available. Please create a category first.");
+                                break;
+                            }
+                            System.out.println("Available Categories:");
+                            categories.forEach(c -> System.out.printf("  %d: %s%n", c.getId(), c.getName()));
+                            System.out.print("Enter Category ID: ");
+                            Long catId = parseLong(scanner.nextLine());
+                            Category category = categoryService.getCategoryById(catId);
+                            if (category == null) {
+                                System.out.println("Category not found with ID: " + catId);
+                                break;
+                            }
+
+                            // Choose supplier
+                            var suppliers = supplierService.getAllSuppliers();
+                            if (suppliers.isEmpty()) {
+                                System.out.println("No suppliers available. Please create a supplier first.");
+                                break;
+                            }
+                            System.out.println("Available Suppliers:");
+                            suppliers.forEach(s -> System.out.printf("  %d: %s%n", s.getId(), s.getName()));
+                            System.out.print("Enter Supplier ID: ");
+                            Long supId = parseLong(scanner.nextLine());
+                            Supplier supplier = supplierService.getSupplierById(supId);
+                            if (supplier == null) {
+                                System.out.println("Supplier not found with ID: " + supId);
+                                break;
+                            }
+
+                            // Create and save product
+                            Product p = new Product(name, desc, price, quantity, reorderLevel, category, supplier);
+                            p.addSupplier(supplier);
+                            productService.saveProduct(p);
+                            System.out.println("Product created successfully: " + p);
+
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid number format. Please enter valid numbers.");
+                        } catch (Exception e) {
+                            System.err.println("Error creating product: " + e.getMessage());
+                        }
+                    }
+                    case "2" -> {
+                        try {
+                            var products = productService.getAllProducts();
+                            if (products.isEmpty()) {
+                                System.out.println("No products found.");
+                            } else {
+                                products.forEach(System.out::println);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error retrieving products: " + e.getMessage());
+                        }
+                    }
+                    case "3" -> {
+                        try {
+                            System.out.print("Product ID: ");
+                            long id = parseLong(scanner.nextLine());
+                            Product product = productService.getProductById(id);
+                            if (product != null) {
+                                System.out.println(product);
+                            } else {
+                                System.out.println("Product not found with ID: " + id);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error finding product: " + e.getMessage());
+                        }
+                    }
+                    case "4" -> {
+                        try {
+                            System.out.print("Product name: ");
+                            String name = scanner.nextLine().trim();
+                            if (name.isEmpty()) {
+                                System.out.println("Product name cannot be empty.");
+                                break;
+                            }
+                            Product product = productService.getProductByName(name);
+                            if (product != null) {
+                                System.out.println(product);
+                            } else {
+                                System.out.println("Product not found with name: " + name);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error finding product: " + e.getMessage());
+                        }
+                    }
+                    case "5" -> {
+                        try {
+                            System.out.print("Product ID: ");
+                            long pid = parseLong(scanner.nextLine());
+                            Product p = productService.getProductById(pid);
+                            if (p == null) {
+                                System.out.println("Product not found with ID: " + pid);
+                                break;
+                            }
+                            System.out.print("New name: ");
+                            String newName = scanner.nextLine().trim();
+                            if (newName.isEmpty()) {
+                                System.out.println("Product name cannot be empty.");
+                                break;
+                            }
+                            p.setName(newName);
+                            productService.updateProduct(p);
+                            System.out.println("Product updated successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error updating product: " + e.getMessage());
+                        }
+                    }
+                    case "6" -> {
+                        try {
+                            System.out.print("Product ID to delete: ");
+                            long id = parseLong(scanner.nextLine());
+                            productService.deleteProduct(id);
+                            System.out.println("Product deleted successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error deleting product: " + e.getMessage());
+                        }
+                    }
+                    case "7" -> {
+                        try {
+                            System.out.print("Category ID: ");
+                            long catId = parseLong(scanner.nextLine());
+                            Category cat = categoryService.getCategoryById(catId);
+                            if (cat == null) {
+                                System.out.println("Category not found with ID: " + catId);
+                                break;
+                            }
+                            var products = productService.getProductsByCategory(cat);
+                            if (products.isEmpty()) {
+                                System.out.println("No products found for category: " + cat.getName());
+                            } else {
+                                products.forEach(System.out::println);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error finding products by category: " + e.getMessage());
+                        }
+                    }
+                    case "8" -> {
+                        try {
+                            System.out.print("Supplier ID: ");
+                            long supId = parseLong(scanner.nextLine());
+                            Supplier s = supplierService.getSupplierById(supId);
+                            if (s == null) {
+                                System.out.println("Supplier not found with ID: " + supId);
+                                break;
+                            }
+                            var products = productService.getProductsBySupplier(s);
+                            if (products.isEmpty()) {
+                                System.out.println("No products found for supplier: " + s.getName());
+                            } else {
+                                products.forEach(System.out::println);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error finding products by supplier: " + e.getMessage());
+                        }
+                    }
+                    case "9" -> { return; }
+                    default -> System.out.println("Invalid option. Please select 1-9.");
+                }
+            } catch (Exception e) {
+                System.err.println("An unexpected error occurred: " + e.getMessage());
             }
         }
     }
 
-    private static double getDoubleInput(String prompt) {
+    private static void supplierMenu() {
         while (true) {
             try {
-                System.out.print(prompt);
-                double value = Double.parseDouble(scanner.nextLine());
-                return value;
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number. Please try again.");
+                System.out.println("\n--- Supplier Menu ---");
+                System.out.println("1. Create Supplier");
+                System.out.println("2. List All Suppliers");
+                System.out.println("3. Find Supplier by ID");
+                System.out.println("4. Update Supplier");
+                System.out.println("5. Delete Supplier");
+                System.out.println("6. List Products for Supplier");
+                System.out.println("7. Back");
+                System.out.print("Choose an option: ");
+
+                String choice = scanner.nextLine();
+                switch (choice) {
+                    case "1" -> {
+                        try {
+                            System.out.print("Supplier name: ");
+                            String name = scanner.nextLine().trim();
+                            if (name.isEmpty()) {
+                                System.out.println("Supplier name cannot be empty.");
+                                break;
+                            }
+                            supplierService.saveSupplier(new Supplier(name));
+                            System.out.println("Supplier created successfully.");
+                        } catch (Exception e) {
+                            System.err.println("Error creating supplier: " + e.getMessage());
+                        }
+                    }
+                    case "2" -> {
+                        try {
+                            var suppliers = supplierService.getAllSuppliers();
+                            if (suppliers.isEmpty()) {
+                                System.out.println("No suppliers found.");
+                            } else {
+                                suppliers.forEach(System.out::println);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error retrieving suppliers: " + e.getMessage());
+                        }
+                    }
+                    case "3" -> {
+                        try {
+                            System.out.print("Supplier ID: ");
+                            long id = parseLong(scanner.nextLine());
+                            Supplier supplier = supplierService.getSupplierById(id);
+                            if (supplier != null) {
+                                System.out.println(supplier);
+                            } else {
+                                System.out.println("Supplier not found with ID: " + id);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error finding supplier: " + e.getMessage());
+                        }
+                    }
+                    case "4" -> {
+                        try {
+                            System.out.print("Supplier ID: ");
+                            long id = parseLong(scanner.nextLine());
+                            Supplier sup = supplierService.getSupplierById(id);
+                            if (sup == null) {
+                                System.out.println("Supplier not found with ID: " + id);
+                                break;
+                            }
+                            System.out.print("New name: ");
+                            String newName = scanner.nextLine().trim();
+                            if (newName.isEmpty()) {
+                                System.out.println("Supplier name cannot be empty.");
+                                break;
+                            }
+                            sup.setName(newName);
+                            supplierService.updateSupplier(sup);
+                            System.out.println("Supplier updated successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error updating supplier: " + e.getMessage());
+                        }
+                    }
+                    case "5" -> {
+                        try {
+                            System.out.print("Supplier ID to delete: ");
+                            long id = parseLong(scanner.nextLine());
+                            supplierService.deleteSupplierById(id);
+                            System.out.println("Supplier deleted successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error deleting supplier: " + e.getMessage());
+                        }
+                    }
+                    case "6" -> {
+                        try {
+                            System.out.print("Supplier ID: ");
+                            long id = parseLong(scanner.nextLine());
+                            var products = supplierService.getProductsForSupplier(id);
+                            if (products.isEmpty()) {
+                                System.out.println("No products found for supplier ID: " + id);
+                            } else {
+                                products.forEach(System.out::println);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (Exception e) {
+                            System.err.println("Error finding products for supplier: " + e.getMessage());
+                        }
+                    }
+                    case "7" -> { return; }
+                    default -> System.out.println("Invalid option. Please select 1-7.");
+                }
+            } catch (Exception e) {
+                System.err.println("An unexpected error occurred: " + e.getMessage());
             }
         }
+    }
+
+    private static void inventoryMenu() throws InvalidTransactionException {
+        while (true) {
+            try {
+                System.out.println("\n--- Inventory Transactions ---");
+                System.out.println("1. Record Sale");
+                System.out.println("2. Record Restock");
+                System.out.println("3. Record Return");
+                System.out.println("4. View Stock Level");
+                System.out.println("5. List All Transactions");
+                System.out.println("6. Back");
+                System.out.print("Choose an option: ");
+
+                String choice = scanner.nextLine();
+                switch (choice) {
+                    case "1" -> {
+                        try {
+                            System.out.print("Product ID: ");
+                            long pid = parseLong(scanner.nextLine());
+                            System.out.print("Qty sold: ");
+                            int q = parseInt(scanner.nextLine());
+                            if (q <= 0) {
+                                System.out.println("Quantity sold must be positive.");
+                                break;
+                            }
+                            inventoryService.recordSale(pid, q);
+                            System.out.println("Sale recorded successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid number format. Please enter valid numbers.");
+                        } catch (ProductNotFoundException e) {
+                            System.err.println(e.getMessage());
+                        } catch (Exception e) {
+                            System.err.println("Error recording sale: " + e.getMessage());
+                        }
+                    }
+                    case "2" -> {
+                        try {
+                            System.out.print("Product ID: ");
+                            long pid = parseLong(scanner.nextLine());
+                            System.out.print("Qty restocked: ");
+                            int q = parseInt(scanner.nextLine());
+                            if (q <= 0) {
+                                System.out.println("Quantity restocked must be positive.");
+                                break;
+                            }
+                            inventoryService.recordRestock(pid, q);
+                            System.out.println("Restock recorded successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid number format. Please enter valid numbers.");
+                        } catch (ProductNotFoundException e) {
+                            System.err.println(e.getMessage());
+                        } catch (Exception e) {
+                            System.err.println("Error recording restock: " + e.getMessage());
+                        }
+                    }
+                    case "3" -> {
+                        try {
+                            System.out.print("Product ID: ");
+                            long pid = parseLong(scanner.nextLine());
+                            System.out.print("Qty returned: ");
+                            int q = parseInt(scanner.nextLine());
+                            if (q <= 0) {
+                                System.out.println("Quantity returned must be positive.");
+                                break;
+                            }
+                            inventoryService.recordReturn(pid, q);
+                            System.out.println("Return recorded successfully.");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid number format. Please enter valid numbers.");
+                        } catch (ProductNotFoundException e) {
+                            System.err.println(e.getMessage());
+                        } catch (Exception e) {
+                            System.err.println("Error recording return: " + e.getMessage());
+                        }
+                    }
+                    case "4" -> {
+                        try {
+                            System.out.print("Product ID: ");
+                            long pid = parseLong(scanner.nextLine());
+                            int stock = inventoryService.getProductStockLevel(pid);
+                            System.out.println("Stock level: " + stock);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid ID format. Please enter a valid number.");
+                        } catch (ProductNotFoundException e) {
+                            System.err.println(e.getMessage());
+                        } catch (Exception e) {
+                            System.err.println("Error retrieving stock level: " + e.getMessage());
+                        }
+                    }
+                    case "5" -> {
+                        try {
+                            var transactions = inventoryService.getAllTransactions();
+                            if (transactions.isEmpty()) {
+                                System.out.println("No transactions found.");
+                            } else {
+                                transactions.forEach(System.out::println);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error retrieving transactions: " + e.getMessage());
+                        }
+                    }
+                    case "6" -> { return; }
+                    default -> System.out.println("Invalid option. Please select 1-6.");
+                }
+            } catch (Exception e) {
+                System.err.println("An unexpected error occurred: " + e.getMessage());
+            }
+        }
+    }
+
+    // Helper methods for parsing with better error messages
+    private static long parseLong(String input) throws NumberFormatException {
+        if (input == null || input.trim().isEmpty()) {
+            throw new NumberFormatException("Input cannot be empty");
+        }
+        return Long.parseLong(input.trim());
+    }
+
+    private static int parseInt(String input) throws NumberFormatException {
+        if (input == null || input.trim().isEmpty()) {
+            throw new NumberFormatException("Input cannot be empty");
+        }
+        return Integer.parseInt(input.trim());
+    }
+
+    private static double parseDouble(String input) throws NumberFormatException {
+        if (input == null || input.trim().isEmpty()) {
+            throw new NumberFormatException("Input cannot be empty");
+        }
+        return Double.parseDouble(input.trim());
     }
 }
