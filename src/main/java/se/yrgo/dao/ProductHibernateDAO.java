@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
+import se.yrgo.exception.ProductNotFoundException;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -27,12 +28,12 @@ public class ProductHibernateDAO implements ProductDAO {
     }
 
     @Override
-    public Product getProductById(Long id) {
-        Session session = sessionFactory.getCurrentSession();
-        return session.createQuery(
-                        "SELECT p FROM Product p LEFT JOIN FETCH p.suppliers WHERE p.id = :id", Product.class)
-                .setParameter("id", id)
-                .uniqueResult();
+    public Product getProductById(Long id) throws ProductNotFoundException {
+        Product product = sessionFactory.getCurrentSession().get(Product.class, id);
+        if (product == null) {
+            throw new ProductNotFoundException(id);
+        }
+        return product;
     }
 
     @Override
@@ -83,7 +84,9 @@ public class ProductHibernateDAO implements ProductDAO {
     @Override
     public List<Product> getProductsBySupplier(Supplier supplier) {
         Session session = sessionFactory.getCurrentSession();
-        return session.createQuery("FROM Product p WHERE p.suppliers = :supplier", Product.class)
+        return session.createQuery("FROM Product p WHERE :supplier member of p.suppliers",
+                        Product.class
+                )
                 .setParameter("supplier", supplier)
                 .getResultList();
     }
@@ -122,8 +125,11 @@ public class ProductHibernateDAO implements ProductDAO {
 
     @Override
     public Product getProductByName(String name) {
-        List<Product> results = em.createQuery("FROM Product WHERE name = :name", Product.class)
-                .setParameter("name", name)
+        List<Product> results = em.createQuery(
+                        "FROM Product p WHERE lower(p.name) = :name",
+                        Product.class
+                )
+                .setParameter("name", name.toLowerCase())   // ← lowercase the input
                 .getResultList();
 
         return results.isEmpty() ? null : results.get(0);

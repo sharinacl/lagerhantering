@@ -16,10 +16,14 @@ public class CategoryHibernateDAO implements CategoryDAO {
 
     @Override
     public Category getCategoryByName(String name) {
-        Session session = sessionFactory.getCurrentSession();
-        return session.createQuery("FROM Category WHERE name = :name", Category.class)
-                .setParameter("name", name)
-                .uniqueResult();
+        return sessionFactory.getCurrentSession()
+                .createQuery(
+                        "FROM Category c WHERE lower(c.name) = :name",
+                        Category.class
+                )
+                .setParameter("name", name.toLowerCase())
+                .uniqueResultOptional()
+                .orElse(null);
     }
 
     @Override

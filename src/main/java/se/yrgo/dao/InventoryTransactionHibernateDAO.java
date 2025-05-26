@@ -42,4 +42,16 @@ public class InventoryTransactionHibernateDAO implements InventoryTransactionDAO
         session.createQuery("delete from InventoryTransaction").executeUpdate();
     }
 
+    @Override
+    public List<InventoryTransaction> findRecent(int count) {
+        Session session = sessionFactory.getCurrentSession();
+        return session.createQuery(
+                        "SELECT t FROM InventoryTransaction t " +
+                                "JOIN FETCH t.product " +
+                                "ORDER BY t.timestamp DESC",
+                        InventoryTransaction.class)
+                .setMaxResults(count)
+                .getResultList();
+    }
+
 }

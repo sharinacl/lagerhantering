@@ -19,6 +19,7 @@
     <bean id="transactionManager"
           class="org.springframework.orm.hibernate5.HibernateTransactionManager"
           autowire="byType">
+        <property name="sessionFactory" ref="sessionFactory"/>
 
     </bean>
     <!-- DataSources -->
@@ -65,6 +66,6 @@
     <aop:aspectj-autoproxy/>
 
     <!-- Transaction Configuration -->
-    <tx:annotation-driven/>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
     <context:component-scan base-package="se.yrgo" />
 </beans>

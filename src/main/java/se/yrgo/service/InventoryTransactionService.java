@@ -23,22 +23,9 @@ public interface InventoryTransactionService {
     void recordSale(Long productId, int quantity) throws ProductNotFoundException;
     void recordRestock(Long productId, int quantity) throws ProductNotFoundException;
     void recordReturn(Long productId, int quantity) throws ProductNotFoundException;
-    void recordAdjustment(Long productId, int quantity, String notes) throws ProductNotFoundException;
 
     // Business intelligence
     int getProductStockLevel(Long productId) throws ProductNotFoundException;
     List<InventoryTransaction> getRecentTransactions(int count);
-
-    @Transactional
-    void saveTransaction(InventoryTransaction inventoryTransaction);
-
-    @Transactional
-    void recordSale(Product product, int quantity);
-
-    @Transactional
-    void recordRestock(Product product, int quantity);
-
-    @Transactional
-    void deleteAllTransactions(long l);
 
 }

@@ -4,12 +4,13 @@ import org.springframework.transaction.annotation.Transactional;
 import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
+import se.yrgo.exception.ProductNotFoundException;
 
 import java.util.List;
 
 public interface ProductService {
     void saveProduct(Product product);
-    Product getProductById(Long id);
+    Product getProductById(Long id) throws ProductNotFoundException;
 
     Product findByIdWithTransactionsAndSuppliers(Long id);
 

@@ -20,7 +20,7 @@ public interface SupplierDAO {
     double getTotalProductValueForSupplier(Long supplierId);
     List<Supplier> getSuppliersWithoutProducts();
     List<Supplier> getSuppliersWithMostProducts(int limit);
-
+    List<String> getProductNamesBySupplier(Long supplierId);
     Supplier getSupplierByName(String supplierName);
 
 }

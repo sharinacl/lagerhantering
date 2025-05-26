@@ -8,6 +8,7 @@ import se.yrgo.dao.SupplierDAO;
 import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
+import se.yrgo.exception.ProductNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Product getProductById(Long id) {
+    public Product getProductById(Long id) throws ProductNotFoundException {
         Product p = productDAO.getProductById(id);
         if (p != null) {
             p.getSuppliers().size();

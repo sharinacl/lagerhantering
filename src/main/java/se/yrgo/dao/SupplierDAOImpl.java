@@ -19,6 +19,10 @@ public class SupplierDAOImpl implements SupplierDAO {
     @Autowired
     private SessionFactory sessionFactory;
 
+    private Session session() {
+        return sessionFactory.getCurrentSession();
+    }
+
     @Override
     public void saveSupplier(Supplier supplier) {
         Session session = sessionFactory.getCurrentSession();
@@ -89,7 +93,11 @@ public class SupplierDAOImpl implements SupplierDAO {
     public List<Product> getProductsBySupplier(Long supplierId) {
         Session session = sessionFactory.getCurrentSession();
         return session.createQuery(
-                        "SELECT p FROM Product p JOIN p.suppliers s WHERE s.id = :supplierId", Product.class)
+                        "SELECT DISTINCT p " +
+                                "FROM Product p " +
+                                "  JOIN FETCH p.suppliers s " +
+                                "WHERE s.id = :supplierId",
+                        Product.class)
                 .setParameter("supplierId", supplierId)
                 .getResultList();
     }
@@ -139,6 +147,16 @@ public class SupplierDAOImpl implements SupplierDAO {
         return session.createQuery(
                         "SELECT s FROM Supplier s ORDER BY SIZE(s.products) DESC", Supplier.class)
                 .setMaxResults(limit)
+                .getResultList();
+    }
+
+    @Override
+    public List<String> getProductNamesBySupplier(Long supplierId) {
+        return session().createQuery(
+                        "SELECT p.name FROM Product p JOIN p.suppliers s WHERE s.id = :supId",
+                        String.class
+                )
+                .setParameter("supId", supplierId)
                 .getResultList();
     }
 

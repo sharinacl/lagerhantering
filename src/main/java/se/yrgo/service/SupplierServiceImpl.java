@@ -22,9 +22,6 @@ public class SupplierServiceImpl implements SupplierService {
     @Autowired
     private SupplierDAO supplierDAO;
 
-//    @PersistenceContext
-//    private EntityManager entityManager;
-
     @Override
     public void saveSupplier(Supplier supplier) {
         supplierDAO.saveSupplier(supplier);
@@ -43,6 +40,13 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public void deleteSupplierById(Long id) {
+        if (supplierDAO.getSupplierById(id) == null) {
+            throw new IllegalArgumentException("Supplier with id " + id + " not found");
+        }
+        for (Product product : supplierDAO.getProductsBySupplier(id)) {
+            product.getSuppliers().remove(supplierDAO.getSupplierById(id));
+        }
+        supplierDAO.getProductsBySupplier(id).clear();
         supplierDAO.deleteSupplier(id);
     }
 
@@ -67,6 +71,7 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Product> getProductsForSupplier(Long supplierId) {
         return supplierDAO.getProductsBySupplier(supplierId);
     }
@@ -130,15 +135,13 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<String> getProductNamesForSupplier(String supplierName) {
         Supplier supplier = supplierDAO.getSupplierByName(supplierName);
         if (supplier == null) {
             throw new IllegalArgumentException("Supplier " + supplierName + " not found");
         }
-        return supplierDAO.getProductsBySupplier(supplier.getId())
-                .stream()
-                .map(Product::getName)
-                .collect(Collectors.toList());
+        return supplierDAO.getProductNamesBySupplier(supplier.getId());
     }
 
 }

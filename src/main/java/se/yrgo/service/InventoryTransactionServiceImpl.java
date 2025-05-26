@@ -11,9 +11,11 @@ import se.yrgo.entity.TransactionType;
 import se.yrgo.exception.ProductNotFoundException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
+@Transactional
 public class InventoryTransactionServiceImpl implements InventoryTransactionService {
 
     @Autowired
@@ -24,7 +26,7 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
 
     @Override
     @Transactional
-    public void recordTransaction(Long productId, int quantity, TransactionType transactionType) {
+    public void recordTransaction(Long productId, int quantity, TransactionType transactionType) throws ProductNotFoundException {
         Product product = productDAO.getProductById(productId);
         if (product == null) throw new IllegalArgumentException("Invalid product ID");
 
@@ -52,60 +54,60 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
 
     @Override
     public void recordSale(Long productId, int quantity) throws ProductNotFoundException {
-
+        Product product = productDAO.getProductById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException(productId);
+        }
+        InventoryTransaction tx = new InventoryTransaction(-quantity, TransactionType.SALE, product);
+        transactionDAO.save(tx);
+        product.setQuantity(product.getQuantity() - quantity);
+        productDAO.saveProduct(product);
     }
 
     @Override
     public void recordRestock(Long productId, int quantity) throws ProductNotFoundException {
-
+        Product product = productDAO.getProductById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException(productId);
+        }
+        InventoryTransaction tx = new InventoryTransaction(-quantity, TransactionType.RESTOCK, product);
+        transactionDAO.save(tx);
+        product.setQuantity(product.getQuantity() + quantity);
+        productDAO.saveProduct(product);
     }
 
     @Override
     public void recordReturn(Long productId, int quantity) throws ProductNotFoundException {
-
+        Product product = productDAO.getProductById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException(productId);
+        }
+        InventoryTransaction tx = new InventoryTransaction(-quantity, TransactionType.RETURN, product);
+        transactionDAO.save(tx);
+        product.setQuantity(product.getQuantity() + quantity);
+        productDAO.saveProduct(product);
     }
 
-    @Override
-    public void recordAdjustment(Long productId, int quantity, String notes) throws ProductNotFoundException {
-
-    }
 
     @Override
     public int getProductStockLevel(Long productId) throws ProductNotFoundException {
-        return 0;
-    }
-
-    @Override
-    public List<InventoryTransaction> getRecentTransactions(int count) {
-        return List.of();
-    }
-
-    @Transactional
-    @Override
-    public void saveTransaction(InventoryTransaction inventoryTransaction) {
-        inventoryTransaction.setTimestamp(LocalDateTime.now());
-        transactionDAO.save(inventoryTransaction);
+        Product product = productDAO.getProductById(productId);
+        if (product == null) {
+            throw new ProductNotFoundException(productId);
+        }
+        return transactionDAO.findByProductId(productId)
+                .stream()
+                .mapToInt(InventoryTransaction::getQuantity)
+                .sum();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public void recordSale(Product product, int quantity) {
-        InventoryTransaction tx = new InventoryTransaction(quantity, TransactionType.SALE, product);
-        tx.setTimestamp(LocalDateTime.now());
-        transactionDAO.save(tx);
-    }
-
-    @Transactional
-    @Override
-    public void recordRestock(Product product, int quantity) {
-        InventoryTransaction tx = new InventoryTransaction(quantity, TransactionType.RESTOCK, product);
-        tx.setTimestamp(LocalDateTime.now());
-        transactionDAO.save(tx);
-    }
-
-    @Override
-    public void deleteAllTransactions(long l) {
-        transactionDAO.deleteAllTransaction();
+    public List<InventoryTransaction> getRecentTransactions(int count) {
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+        return transactionDAO.findRecent(count);
     }
 
 }
