@@ -1,5 +1,6 @@
 package se.yrgo.app;
 
+import se.yrgo.apputility.DisplayUtil;
 import se.yrgo.entity.Category;
 import se.yrgo.entity.Product;
 import se.yrgo.entity.Supplier;
@@ -154,7 +155,7 @@ public class ProductMenuHandler {
             long id = Long.parseLong(scanner.nextLine());
             Product product = productService.getProductById(id);
             if (product != null) {
-                System.out.println(product);
+                DisplayUtil.displayProduct(product);
             } else {
                 System.out.println("Product not found with ID: " + id);
             }
@@ -175,7 +176,7 @@ public class ProductMenuHandler {
             }
             Product product = productService.getProductByName(name);
             if (product != null) {
-                System.out.println(product);
+                DisplayUtil.displayProduct(product);
             } else {
                 System.out.println("Product not found with name: " + name);
             }
@@ -193,24 +194,137 @@ public class ProductMenuHandler {
                 System.out.println("Product not found with ID: " + pid);
                 return;
             }
-            System.out.print("New name (" + p.getName() + "): ");
+
+            System.out.println("Current product information:");
+            DisplayUtil.displayProduct(p);
+
+            System.out.print("Enter new name (press Enter to keep '" + p.getName() + "'): ");
             String newName = scanner.nextLine().trim();
             if (!newName.isEmpty()) {
                 p.setName(newName);
             }
+
+            System.out.print("Enter new description (press Enter to keep '" + p.getDescription() + "'): ");
+            String newDesc = scanner.nextLine().trim();
+            if (!newDesc.isEmpty()) {
+                p.setDescription(newDesc);
+            }
+
+            System.out.print("Enter new price (press Enter to keep '" + p.getPrice() + "'): ");
+            String priceInput = scanner.nextLine().trim();
+            if (!priceInput.isEmpty()) {
+                double newPrice = Double.parseDouble(priceInput);
+                if (newPrice < 0) {
+                    System.out.println("Price cannot be negative.");
+                    return;
+                }
+                p.setPrice(newPrice);
+            }
+
+            System.out.print("Enter new quantity (press Enter to keep '" + p.getQuantity() + "'): ");
+            String qtyInput = scanner.nextLine().trim();
+            if (!qtyInput.isEmpty()) {
+                int newQuantity = Integer.parseInt(qtyInput);
+                if (newQuantity < 0) {
+                    System.out.println("Quantity cannot be negative.");
+                    return;
+                }
+                p.setQuantity(newQuantity);
+            }
+
+            // ✅ Update Category
+            System.out.print("Enter new category ID (press Enter to keep current): ");
+            String catInput = scanner.nextLine().trim();
+            if (!catInput.isEmpty()) {
+                long newCatId = Long.parseLong(catInput);
+                Category newCategory = categoryService.getCategoryById(newCatId);
+                if (newCategory != null) {
+                    p.setCategory(newCategory);
+                } else {
+                    System.out.println("No category found with ID: " + newCatId);
+                }
+            }
+
+            // ✅ Update Suppliers
+            System.out.print("Do you want to update the suppliers? (y/n): ");
+            String supplierDecision = scanner.nextLine().trim().toLowerCase();
+            if (supplierDecision.equals("y") || supplierDecision.equals("yes")) {
+                p.getSuppliers().clear();
+                while (true) {
+                    System.out.print("Enter supplier ID to add (or press Enter to finish): ");
+                    String input = scanner.nextLine().trim();
+                    if (input.isEmpty()) break;
+
+                    try {
+                        long sid = Long.parseLong(input);
+                        Supplier supplier = supplierService.getSupplierById(sid);
+                        if (supplier != null) {
+                            p.getSuppliers().add(supplier);
+                            supplier.getProducts().add(p); // maintain bidirectional relationship
+                            System.out.println("Added supplier: " + supplier.getName());
+                        } else {
+                            System.out.println("Supplier not found with ID: " + sid);
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid supplier ID format.");
+                    }
+                }
+            } else if (supplierDecision.equals("n") || supplierDecision.equals("no")) {
+                p.getSuppliers().clear();
+                while (true) {
+                    System.out.print("Press Enter to finish: ");
+                    String input = scanner.nextLine().trim();
+                    if (input.isEmpty()) break;
+                }
+
+            }
+
             productService.updateProduct(p);
             System.out.println("Product updated successfully.");
+            DisplayUtil.displayProduct(p);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid ID format. Please enter a valid number.");
+            System.err.println("Invalid input. Please enter valid numbers.");
         } catch (Exception e) {
             System.err.println("Error updating product: " + e.getMessage());
         }
     }
 
+
     private void handleDeleteProduct() {
         try {
             System.out.print("Product ID to delete: ");
             long id = Long.parseLong(scanner.nextLine());
+
+            Product product = productService.getProductById(id);
+            if (product == null) {
+                System.out.println("Product not found.");
+                return;
+            }
+
+            // Show details before deletion
+            DisplayUtil.displayProduct(product);
+
+            System.out.print("Are you sure you want to delete this product? (y/n): ");
+            String confirmation = scanner.nextLine().trim().toLowerCase();
+            if (!confirmation.equals("y") && !confirmation.equals("yes")) {
+                System.out.println("Deletion cancelled.");
+                return;
+            }
+
+            // Safely detach associations
+            Category category = product.getCategory();
+            if (category != null && category.getProducts() != null) {
+                category.getProducts().remove(product);
+                product.setCategory(null);
+            }
+
+            if (product.getSuppliers() != null) {
+                for (Supplier supplier : product.getSuppliers()) {
+                    supplier.getProducts().remove(product);
+                }
+                product.getSuppliers().clear();
+            }
+
             productService.deleteProduct(id);
             System.out.println("Product deleted successfully.");
         } catch (NumberFormatException e) {
@@ -219,6 +333,8 @@ public class ProductMenuHandler {
             System.err.println("Error deleting product: " + e.getMessage());
         }
     }
+
+
 
     private void handleListByCategory() {
         try {
