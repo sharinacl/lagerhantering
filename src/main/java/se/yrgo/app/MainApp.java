@@ -16,7 +16,7 @@ public class MainApp {
         ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("application.xml");
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (ctx != null) {
-                ctx.close(); // This will close the session factory and flush HSQLDB to disk
+                ctx.close();
             }
         }));
 

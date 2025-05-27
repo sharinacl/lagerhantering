@@ -2,16 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>se.yrgo</groupId>
-  <artifactId>lagerhantering</artifactId>
+  <artifactId>inventory-management</artifactId>
   <version>1.0-SNAPSHOT</version>
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
+        <version>3.8.1</version>
         <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <source>17</source>
+          <target>17</target>
         </configuration>
       </plugin>
       <plugin>
@@ -26,7 +26,13 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>se.yrgo.app.DerbyDriverCheck</mainClass>
+                  <mainClass>se.yrgo.app.MainApp</mainClass>
+                </transformer>
+                <transformer>
+                  <resource>META-INF/spring.handlers</resource>
+                </transformer>
+                <transformer>
+                  <resource>META-INF/spring.schemas</resource>
                 </transformer>
               </transformers>
             </configuration>
@@ -39,29 +45,13 @@
         <version>3.1.0</version>
         <configuration>
           <mainClass>se.yrgo.app.MainApp</mainClass>
-          <classpathScope>runtime</classpathScope>
         </configuration>
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <id>eclipse-jakarta</id>
-      <url>https://repo.eclipse.org/content/groups/releases/</url>
-    </repository>
-  </repositories>
-  <dependencies>
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-core</artifactId>
-      <version>6.2.7.Final</version>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
   <properties>
-    <hibernate.version>6.2.7.Final</hibernate.version>
-    <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
-    <java.version>17</java.version>
-    <spring.version>5.3.34</spring.version>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 </project>
