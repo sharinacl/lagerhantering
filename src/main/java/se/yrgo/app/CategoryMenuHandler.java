@@ -58,7 +58,12 @@ public class CategoryMenuHandler {
                 System.out.println("Category name cannot be empty.");
                 return;
             }
-            Category category = new Category(name);
+            System.out.print("Enter category description: ");
+            String description = scanner.nextLine().trim();
+            if (description.isEmpty()) {
+                System.out.println("Category description cannot be empty.");
+            }
+            Category category = new Category(name, description);
             categoryService.saveCategory(category);
             System.out.println("Category created successfully: ");
             DisplayUtil.displayCategory(category);
@@ -121,25 +126,29 @@ public class CategoryMenuHandler {
             System.out.print("Enter category ID you want to update: ");
             long id = Long.parseLong(scanner.nextLine());
             Category category = categoryService.getCategoryById(id);
+
             if (category == null) {
                 System.out.println("Category not found with ID: " + id);
                 return;
-            } else {
-                DisplayUtil.displayCategory(category);
             }
-            System.out.print("Enter new name: ");
+
+            System.out.println("Current category information:");
+            DisplayUtil.displayCategory(category);
+
+            // Prompt for new name (optional)
+            System.out.print("Enter new name (press Enter to keep '" + category.getName() + "'): ");
             String newName = scanner.nextLine().trim();
-            if (newName.isEmpty()) {
-                System.out.println("Category name cannot be empty.");
-                return;
+            if (!newName.isEmpty()) {
+                category.setName(newName);
             }
-            System.out.print("Enter new description: ");
+
+            // Prompt for new description (optional)
+            System.out.print("Enter new description (press Enter to keep '" + category.getDescription() + "'): ");
             String newDescription = scanner.nextLine().trim();
-            if (newDescription.isEmpty()) {
-                System.out.println("Category description cannot be empty.");
+            if (!newDescription.isEmpty()) {
+                category.setDescription(newDescription);
             }
-            category.setName(newName);
-            category.setDescription(newDescription);
+
             categoryService.updateCategory(category);
             System.out.println("Category updated successfully.");
         } catch (NumberFormatException e) {
