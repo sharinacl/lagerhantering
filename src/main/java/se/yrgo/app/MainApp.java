@@ -1,109 +1,65 @@
-package se.yrgo.main;
+package se.yrgo.app;
 
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import se.yrgo.entity.*;
-import se.yrgo.service.*;
+import se.yrgo.service.CategoryService;
+import se.yrgo.service.InventoryTransactionService;
+import se.yrgo.service.ProductService;
+import se.yrgo.service.SupplierService;
 
-import java.util.*;
+import java.util.Scanner;
 
 public class MainApp {
-    private static Scanner scanner = new Scanner(System.in);
+    private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        ApplicationContext context = new ClassPathXmlApplicationContext("application.xml");
+        // load Spring context
+        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("application.xml");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (ctx != null) {
+                ctx.close(); // This will close the session factory and flush HSQLDB to disk
+            }
+        }));
 
-        CategoryService categoryService = context.getBean(CategoryService.class);
-        ProductService productService = context.getBean(ProductService.class);
-        SupplierService supplierService = context.getBean(SupplierService.class);
-        InventoryTransactionService transactionService = context.getBean(InventoryTransactionService.class);
+        // lookup services
+        CategoryService categoryService = ctx.getBean(CategoryService.class);
+        ProductService productService = ctx.getBean(ProductService.class);
+        SupplierService supplierService = ctx.getBean(SupplierService.class);
+        InventoryTransactionService inventoryService = ctx.getBean(InventoryTransactionService.class);
 
+        // initialize menu handlers
+        CategoryMenuHandler categoryMenu = new CategoryMenuHandler(categoryService, scanner);
+        ProductMenuHandler productMenu = new ProductMenuHandler(productService,
+                categoryService,
+                supplierService,
+                scanner);
+        SupplierMenuHandler supplierMenu = new SupplierMenuHandler(supplierService, scanner);
+        InventoryMenuHandler inventoryMenu = new InventoryMenuHandler(inventoryService,
+                productService,
+                scanner);
+
+        // main loop
         while (true) {
-            System.out.println("\n==== Inventory Management System ====");
+            System.out.println("\n=== Inventory Management System ===");
             System.out.println("1. Manage Categories");
             System.out.println("2. Manage Products");
             System.out.println("3. Manage Suppliers");
-            System.out.println("4. Manage Transactions");
-            System.out.println("0. Exit");
-            System.out.print("Choose an option: ");
-            int choice = scanner.nextInt();
+            System.out.println("4. Manage Inventory Transactions");
+            System.out.println("5. Exit");
+            System.out.print("Select an option: ");
 
+            String choice = scanner.nextLine();
             switch (choice) {
-                case 1: handleCategories(categoryService); break;
-                case 2: handleProducts(productService); break;
-                case 3: handleSuppliers(supplierService); break;
-                case 4: handleTransactions(transactionService); break;
-                case 0: System.exit(0);
-                default: System.out.println("Invalid option. Try again.");
+                case "1" -> categoryMenu.showMenu();
+                case "2" -> productMenu.showMenu();
+                case "3" -> supplierMenu.showMenu();
+                case "4" -> inventoryMenu.showMenu();
+                case "5" -> {
+                    System.out.println("Exiting. Goodbye!");
+                    ((ClassPathXmlApplicationContext) ctx).close();
+                    return;
+                }
+                default -> System.out.println("Invalid option. Please select 1-5.");
             }
-        }
-    }
-
-    private static void handleCategories(CategoryService service) {
-        System.out.println("\n--- Manage Categories ---");
-        System.out.println("1. List all");
-        System.out.println("2. Add new");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        if (choice == 1) {
-            List<Category> categories = service.getAllCategories();
-            categories.forEach(System.out::println);
-        } else if (choice == 2) {
-            System.out.print("Enter category name: ");
-            String name = scanner.nextLine();
-            service.saveCategory(new Category(name));
-            System.out.println("Category added.");
-        }
-    }
-
-    private static void handleProducts(ProductService service) {
-        System.out.println("\n--- Manage Products ---");
-        System.out.println("1. List all");
-        System.out.println("2. Add new");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        if (choice == 1) {
-            List<Product> products = service.getAllProducts();
-            products.forEach(System.out::println);
-        } else if (choice == 2) {
-            System.out.print("Enter product name: ");
-            String name = scanner.nextLine();
-            service.saveProduct(new Product(name));
-            System.out.println("Product added.");
-        }
-    }
-
-    private static void handleSuppliers(SupplierService service) {
-        System.out.println("\n--- Manage Suppliers ---");
-        System.out.println("1. List all");
-        System.out.println("2. Add new");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        if (choice == 1) {
-            List<Supplier> suppliers = service.getAllSuppliers();
-            suppliers.forEach(System.out::println);
-        } else if (choice == 2) {
-            System.out.print("Enter supplier name: ");
-            String name = scanner.nextLine();
-            service.saveSupplier(new Supplier(name));
-            System.out.println("Supplier added.");
-        }
-    }
-
-    private static void handleTransactions(InventoryTransactionService service) {
-        System.out.println("\n--- Manage Transactions ---");
-        System.out.println("1. List all");
-        System.out.println("2. Add new");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        if (choice == 1) {
-            List<InventoryTransaction> transactions = service.getAllTransactions();
-            transactions.forEach(System.out::println);
-        } else if (choice == 2) {
-            System.out.print("Enter transaction type: ");
-            String type = scanner.nextLine();
-            service.saveTransaction(new InventoryTransaction(type));
-            System.out.println("Transaction added.");
         }
     }
 }

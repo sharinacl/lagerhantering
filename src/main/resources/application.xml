@@ -19,6 +19,7 @@
     <bean id="transactionManager"
           class="org.springframework.orm.hibernate5.HibernateTransactionManager"
           autowire="byType">
+        <property name="sessionFactory" ref="sessionFactory"/>
 
     </bean>
     <!-- DataSources -->
@@ -46,10 +47,11 @@
         </property>
         <property name="hibernateProperties">
             <props>
-                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.show_sql">false</prop>
                 <prop key="hibernate.hbm2ddl.auto">create</prop>
+                <prop key="hibernate.format_sql">false</prop>
                 <prop
-                        key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
+                        key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
             </props>
         </property>
 
@@ -64,6 +66,6 @@
     <aop:aspectj-autoproxy/>
 
     <!-- Transaction Configuration -->
-    <tx:annotation-driven/>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
     <context:component-scan base-package="se.yrgo" />
 </beans>

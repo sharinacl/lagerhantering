@@ -1,7 +1,10 @@
 package se.yrgo.entity;
 
 
-import jakarta.persistence.*;
+
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "category")
@@ -12,6 +15,25 @@ public class Category {
 
     private String name;
     private String description;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<Product> products = new HashSet<Product>();
+
+    public Category(String name) {
+        this.name = name;
+    }
+
+    public void addProduct(Product product) {
+        products.add(product);
+        product.setCategory(this);
+    }
+
+    public void removeProduct(Product product) {
+        products.remove(product);
+        if (product.getCategory() != null && product.getCategory().equals(this)) {
+            product.setCategory(null);
+        }
+    }
 
     public Category() {}
 
@@ -40,4 +62,16 @@ public class Category {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public Set<Product> getProducts() {
+        return products;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CategoryID: %d, name: %s", id, name);
+    }
+
+
+
 }
