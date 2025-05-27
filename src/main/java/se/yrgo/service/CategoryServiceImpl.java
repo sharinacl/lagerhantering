@@ -1,5 +1,6 @@
 package se.yrgo.service;
 
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,26 +16,50 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public void save(Category category) {
+    public void saveCategory(Category category) {
         categoryDAO.save(category);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Category> getAll() {
+    public List<Category> getAllCategories() {
         return categoryDAO.findAll();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Category getById(Long id) {
+    public Category getCategoryById(Long id) {
         return categoryDAO.findById(id);
     }
 
     @Override
     @Transactional
-    public void delete(Long id) {
+    public void deleteCategory(Long id) {
         categoryDAO.delete(id);
+    }
+
+    @Override
+    @Transactional
+    public List<Category> getAllCategoriesWithProducts() {
+        return categoryDAO.getAllCategoriesWithProducts();
+    }
+
+    @Override
+    @Transactional
+    public Category getCategoryByName(String name) {
+        return categoryDAO.getCategoryByName(name);
+    }
+
+    @Override
+    @Transactional
+    public void updateCategory(Category category) {
+        categoryDAO.save(category);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllCategories() {
+        categoryDAO.deleteAllCategories();
     }
 
 }

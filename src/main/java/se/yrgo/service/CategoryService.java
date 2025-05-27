@@ -8,15 +8,22 @@ import java.util.List;
 public interface CategoryService {
 
     @Transactional
-    void save(Category category);
+    void saveCategory(Category category);
 
     @Transactional
-    List<Category> getAll();
+    List<Category> getAllCategories();
 
     @Transactional(readOnly = true)
-    Category getById(Long id);
+    Category getCategoryById(Long id);
 
     @Transactional
-    void delete(Long id);
+    void deleteCategory(Long id);
+
+    List<Category> getAllCategoriesWithProducts();
+    Category getCategoryByName(String categoryName);
+
+    void updateCategory(Category category);
+
+    void deleteAllCategories();
 
 }
