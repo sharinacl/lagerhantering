@@ -16,6 +16,7 @@ public class DisplayUtil {
         System.out.println("Reorder level: " + product.getReorderLevel());
         System.out.println("Category: " + (product.getCategory() != null ? product.getCategory().getName() : "None"));
         System.out.println("Number of suppliers: " + product.getSuppliers().size());
+        System.out.println();
     }
 
     public static void displayCategory(Category category) {
@@ -24,6 +25,7 @@ public class DisplayUtil {
         System.out.println("Name: " + category.getName());
         System.out.println("Description: " + category.getDescription());
         System.out.println("Product count: " + category.getProducts().size());
+        System.out.println();
     }
 
     public static void displaySupplier(Supplier supplier) {
@@ -35,5 +37,6 @@ public class DisplayUtil {
         System.out.println("Phone: " + supplier.getPhone());
         System.out.println("Address: " + supplier.getAddress());
         System.out.println("Product count: " + supplier.getProducts().size());
+        System.out.println();
     }
 }
