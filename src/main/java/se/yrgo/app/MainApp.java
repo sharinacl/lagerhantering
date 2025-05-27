@@ -1,6 +1,5 @@
 package se.yrgo.app;
 
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import se.yrgo.service.CategoryService;
 import se.yrgo.service.InventoryTransactionService;
