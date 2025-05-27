@@ -14,7 +14,12 @@ public class MainApp {
 
     public static void main(String[] args) {
         // load Spring context
-        ApplicationContext ctx = new ClassPathXmlApplicationContext("application.xml");
+        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("application.xml");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (ctx != null) {
+                ctx.close(); // This will close the session factory and flush HSQLDB to disk
+            }
+        }));
 
         // lookup services
         CategoryService categoryService = ctx.getBean(CategoryService.class);

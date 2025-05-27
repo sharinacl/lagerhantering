@@ -2,6 +2,7 @@ package se.yrgo.app;
 
 import se.yrgo.entity.Category;
 import se.yrgo.service.CategoryService;
+import se.yrgo.apputility.DisplayUtil;
 
 import java.util.List;
 import java.util.Scanner;
@@ -59,7 +60,8 @@ public class CategoryMenuHandler {
             }
             Category category = new Category(name);
             categoryService.saveCategory(category);
-            System.out.println("Category created successfully: " + category);
+            System.out.println("Category created successfully: ");
+            DisplayUtil.displayCategory(category);
         } catch (Exception e) {
             System.err.println("Error creating category: " + e.getMessage());
         }
@@ -84,7 +86,7 @@ public class CategoryMenuHandler {
             long id = Long.parseLong(scanner.nextLine());
             Category category = categoryService.getCategoryById(id);
             if (category != null) {
-                System.out.println(category);
+                DisplayUtil.displayCategory(category);
             } else {
                 System.out.println("Category not found with ID: " + id);
             }
@@ -105,7 +107,7 @@ public class CategoryMenuHandler {
             }
             Category category = categoryService.getCategoryByName(name);
             if (category != null) {
-                System.out.println(category);
+                DisplayUtil.displayCategory(category);
             } else {
                 System.out.println("Category not found with name: " + name);
             }
@@ -116,12 +118,14 @@ public class CategoryMenuHandler {
 
     private void handleUpdateCategory() {
         try {
-            System.out.print("Enter category ID: ");
+            System.out.print("Enter category ID you want to update: ");
             long id = Long.parseLong(scanner.nextLine());
             Category category = categoryService.getCategoryById(id);
             if (category == null) {
                 System.out.println("Category not found with ID: " + id);
                 return;
+            } else {
+                DisplayUtil.displayCategory(category);
             }
             System.out.print("Enter new name: ");
             String newName = scanner.nextLine().trim();
@@ -129,7 +133,13 @@ public class CategoryMenuHandler {
                 System.out.println("Category name cannot be empty.");
                 return;
             }
+            System.out.print("Enter new description: ");
+            String newDescription = scanner.nextLine().trim();
+            if (newDescription.isEmpty()) {
+                System.out.println("Category description cannot be empty.");
+            }
             category.setName(newName);
+            category.setDescription(newDescription);
             categoryService.updateCategory(category);
             System.out.println("Category updated successfully.");
         } catch (NumberFormatException e) {
@@ -143,8 +153,18 @@ public class CategoryMenuHandler {
         try {
             System.out.print("Enter category ID to delete: ");
             long id = Long.parseLong(scanner.nextLine());
-            categoryService.deleteCategory(id);
-            System.out.println("Category deleted successfully.");
+            Category category = categoryService.getCategoryById(id);
+            DisplayUtil.displayCategory(category);
+            System.out.print("Are you sure you want to delete this category? (y/n): ");
+            String confirmation = scanner.nextLine().trim().toLowerCase();
+
+            if (confirmation.equals("y") || confirmation.equals("yes")) {
+                categoryService.deleteCategory(id);
+                System.out.println("Category deleted successfully.");
+            } else {
+                System.out.println("Deletion cancelled.");
+            }
+
         } catch (NumberFormatException e) {
             System.err.println("Invalid ID format. Please enter a valid number.");
         } catch (Exception e) {
